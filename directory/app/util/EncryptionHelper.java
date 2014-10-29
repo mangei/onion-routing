@@ -2,8 +2,10 @@ package util;
 
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import play.Logger;
 
-import java.io.IOException;
+import java.io.*;
 import java.security.*;
 
 /**
@@ -16,9 +18,9 @@ public class EncryptionHelper {
 
     public static boolean isPublicKey(String publicKey) {
 
-        // TODO implement
+        Key key = stringToKey(publicKey);
 
-        return true;
+        return key != null;
     }
 
     public static KeyPair getRSAKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -28,22 +30,41 @@ public class EncryptionHelper {
         // Create the public and private keys
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
         SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-        generator.initialize(1024, random);
+        generator.initialize(2048, random);
         KeyPair pair = generator.generateKeyPair();
 
         return pair;
     }
 
     public static String keyToString(Key key) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream os = new ObjectOutputStream(out);
         Base64 base64 = new Base64();
-        return base64.encodeAsString(key.getEncoded());
+
+        os.writeObject(key);
+        return base64.encodeAsString(out.toByteArray());
     }
 
-    public static Key StringToKey(String keyString) {
+    public static Key stringToKey(String keyString) {
         Base64 base64 = new Base64();
+        ByteArrayInputStream bais = new ByteArrayInputStream(base64.decode(keyString));
+        ObjectInputStream in = null;
+        try {
+            in = new ObjectInputStream(bais);
+            Object obj = in.readObject();
 
-        // TODO create key object from base64 string
+            if (obj instanceof Key) {
+                return (Key) obj;
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            Logger.info(ExceptionUtils.getStackTrace(e));
+            return null;
 
-        return null;
+        } catch (ClassNotFoundException e) {
+            Logger.info(ExceptionUtils.getStackTrace(e));
+            return null;
+        }
     }
 }
