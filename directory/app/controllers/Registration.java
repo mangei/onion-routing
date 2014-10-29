@@ -2,6 +2,7 @@ package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import model.ChainNode;
 import model.RegisterRequest;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import play.Logger;
@@ -10,6 +11,7 @@ import play.mvc.BodyParser;
 import play.mvc.Result;
 import util.DirectoryHelper;
 import util.EncryptionHelper;
+import util.NodeStorage;
 
 import static play.mvc.Controller.request;
 import static play.mvc.Results.ok;
@@ -33,7 +35,10 @@ public class Registration {
                 RegisterRequest registerRequest = Json.fromJson(json, RegisterRequest.class);
 
                 if (registerRequest != null && DirectoryHelper.verifyRegisterRequest(registerRequest)) {
-                    result.put("secret", DirectoryHelper.nextSessionId());
+                    String secret = DirectoryHelper.nextSessionId();
+                    result.put("secret", secret);
+
+                    // TODO add to node storage
 
                     // TODO remove - just here for testing
                     result.put("debug", registerRequest.toString());
