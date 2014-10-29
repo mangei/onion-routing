@@ -1,6 +1,7 @@
 package util;
 
 import model.ChainNode;
+import play.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +47,7 @@ public class NodeStorage {
         return retSet;
     }
 
-    public static ChainNode getMostRecentlyUpdatedNode (String ip, Integer port) {
+    public static ChainNode getMostRecentlyUpdatedNode(String ip, Integer port) {
         Set<ChainNode> nodeSet = NodeStorage.getNodes(ip, port);
         ChainNode mostRecentNode = null;
 
@@ -72,5 +73,30 @@ public class NodeStorage {
 
     public static Long getLastHeartbeatForNode(ChainNode node) {
         return heartbeatMap.get(node);
+    }
+
+    public static Set<ChainNode> getNodes() {
+        return nodeSet;
+    }
+
+    public static Map<ChainNode, Long> getHeartbeats() {
+        return heartbeatMap;
+    }
+
+    public static void updateHeartbeatForNode(String secret) {
+        ChainNode secretNode = null;
+
+        for (ChainNode node : nodeSet) {
+            if (secret.equals(node.getSecret())) {
+                secretNode = node;
+            }
+        }
+
+        if (secretNode != null) {
+            heartbeatMap.put(secretNode, System.currentTimeMillis());
+        } else {
+            Logger.info("node for heartbeat not found");
+        }
+
     }
 }

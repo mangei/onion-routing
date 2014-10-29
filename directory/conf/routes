@@ -3,9 +3,16 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index()
+GET         /                    controllers.Application.index()
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET         /assets/*file        controllers.Assets.at(path="/public", file)
 
-POST    /register                   controllers.Registration.register()
+
+POST        /register            controllers.Register.register()
+
+GET         /monitor             controllers.Monitor.index()
+
+GET         /nodes               controllers.Monitor.listNodes()
+
+PUT         /heartbeat           controllers.Register.heartbeat()

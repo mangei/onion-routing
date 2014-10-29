@@ -1,5 +1,8 @@
 package model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Created with IntelliJ IDEA.
  * User: thomasrieder
@@ -8,19 +11,26 @@ package model;
  */
 public class ChainNode {
 
+    @JsonProperty("ip")
     private String ip;
+
+    @JsonProperty("port")
     private Integer port;
+
+    @JsonProperty("public_key")
     private String publicKey;
+
+    @JsonProperty("register_date")
+    private Long registerDate;
+
+    // note: due to the way the nodestorage works, you need to update/set this value MANUALLY
+    @JsonProperty("last_heartbeat")
+    private Long lastHeatbeat;
+
+    @JsonIgnore
     private String secret;
 
     public ChainNode() {
-    }
-
-    public ChainNode(String ip, Integer port, String publicKey, String secret) {
-        this.ip = ip;
-        this.port = port;
-        this.publicKey = publicKey;
-        this.secret = secret;
     }
 
     public String getIp() {
@@ -55,6 +65,22 @@ public class ChainNode {
         this.secret = secret;
     }
 
+    public Long getRegisterDate() {
+        return registerDate;
+    }
+
+    public void setRegisterDate(Long registerDate) {
+        this.registerDate = registerDate;
+    }
+
+    public Long getLastHeatbeat() {
+        return lastHeatbeat;
+    }
+
+    public void setLastHeatbeat(Long lastHeatbeat) {
+        this.lastHeatbeat = lastHeatbeat;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -63,8 +89,12 @@ public class ChainNode {
         ChainNode chainNode = (ChainNode) o;
 
         if (ip != null ? !ip.equals(chainNode.ip) : chainNode.ip != null) return false;
+        if (lastHeatbeat != null ? !lastHeatbeat.equals(chainNode.lastHeatbeat) : chainNode.lastHeatbeat != null)
+            return false;
         if (port != null ? !port.equals(chainNode.port) : chainNode.port != null) return false;
         if (publicKey != null ? !publicKey.equals(chainNode.publicKey) : chainNode.publicKey != null) return false;
+        if (registerDate != null ? !registerDate.equals(chainNode.registerDate) : chainNode.registerDate != null)
+            return false;
         if (secret != null ? !secret.equals(chainNode.secret) : chainNode.secret != null) return false;
 
         return true;
@@ -75,6 +105,8 @@ public class ChainNode {
         int result = ip != null ? ip.hashCode() : 0;
         result = 31 * result + (port != null ? port.hashCode() : 0);
         result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
+        result = 31 * result + (registerDate != null ? registerDate.hashCode() : 0);
+        result = 31 * result + (lastHeatbeat != null ? lastHeatbeat.hashCode() : 0);
         result = 31 * result + (secret != null ? secret.hashCode() : 0);
         return result;
     }
