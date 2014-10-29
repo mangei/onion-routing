@@ -1,3 +1,5 @@
+import play.PlayJava
+
 name := """directory"""
 
 version := "1.0-SNAPSHOT"
@@ -10,5 +12,7 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaEbean,
   cache,
-  javaWs
+  javaWs,
+  "commons-validator" % "commons-validator" % "1.4.0",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.51"
 )
