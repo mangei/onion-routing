@@ -3,7 +3,7 @@ _Advanced Internet Computing - Group 4_
 
 ## Team members
  * Lisa Fichtinger
- * Manuel Geier
+ * [Manuel Geier](http://geier.io)
  * Markus Zisser
  * Mihai Lepadat
  * [Thomas Rieder](http://rieder.io)
