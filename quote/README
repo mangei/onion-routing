@@ -1,4 +1,13 @@
-This is your new Play application
-=================================
+# Quotes Service
 
-This file will be packaged with your application, when using `activator dist`.
+Quotes from http://thewebminer.com
+
+## API
+------
+`/quotes` - `GET` - returns a random quote
+```json
+{
+    "quote": "Lorem Ipsum"
+}
+```
+
