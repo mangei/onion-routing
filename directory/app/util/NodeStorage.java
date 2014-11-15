@@ -3,10 +3,7 @@ package util;
 import model.ChainNode;
 import play.Logger;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,7 +17,6 @@ public class NodeStorage {
 
     private static Map<ChainNode, Long> heartbeatMap;
 
-
     static {
         nodeSet = new HashSet<ChainNode>();
         heartbeatMap = new HashMap<ChainNode, Long>();
@@ -33,6 +29,13 @@ public class NodeStorage {
 
     public static void updateHeartbeatForNode(ChainNode node) {
         heartbeatMap.put(node, System.currentTimeMillis());
+    }
+
+    public static ChainNode getLeastUsedNode(){
+        if(nodeSet.size()<=0) return null;
+        ChainNode cn = Collections.min(nodeSet,new ChainNodeUsedComparator());
+        cn.setLasttimeused(Calendar.getInstance().getTimeInMillis());
+        return cn;
     }
 
     public static Set<ChainNode> getNodes(String ip, Integer port) {
