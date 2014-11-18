@@ -1,6 +1,6 @@
 package handlers;
 
-import model.ServiceInfo;
+import model.QuoteServiceInfo;
 
 /**
  * @author Mihai Lepadat
@@ -8,10 +8,10 @@ import model.ServiceInfo;
  */
 public class QuoteServiceHandler {
 
-    private ServiceInfo serviceInfo;
+    private QuoteServiceInfo quoteServiceInfo;
 
-    public QuoteServiceHandler(ServiceInfo serviceInfo) {
-        this.serviceInfo = serviceInfo;
+    public QuoteServiceHandler(QuoteServiceInfo quoteServiceInfo) {
+        this.quoteServiceInfo = quoteServiceInfo;
     }
 
     public String callService() {

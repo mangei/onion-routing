@@ -3,7 +3,7 @@ package controllers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import handlers.QuoteServiceHandler;
-import model.ServiceInfo;
+import model.QuoteServiceInfo;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -13,6 +13,7 @@ import play.Logger;
 import play.libs.Json;
 import play.mvc.*;
 import util.EncodingUtility;
+import util.Global;
 import util.JsonUtility;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class RequestController extends Controller {
             return badRequest("Expecting Json data");
         } else {
             String payload = EncodingUtility.decodeMessage(JsonUtility.getResource(json, "payload"));
-            Logger.debug("decoded payload:" + payload);
+            Logger.debug("decoded payload:" + payload.replaceAll("\r", ""));
 
             json = JsonUtility.convertToJson(payload);
 
@@ -89,8 +90,8 @@ public class RequestController extends Controller {
         String data = JsonUtility.getResource(json, "data");
         String originatorPubKey = JsonUtility.getResource(json, "originator_public_key");
 
-        ServiceInfo serviceInfo = new ServiceInfo(hostname, port, method, data, originatorPubKey);
-        QuoteServiceHandler quoteServiceHandler = new QuoteServiceHandler(serviceInfo);
+        QuoteServiceInfo quoteServiceInfo = new QuoteServiceInfo(hostname, port, method, data, originatorPubKey);
+        QuoteServiceHandler quoteServiceHandler = new QuoteServiceHandler(quoteServiceInfo);
         String response = quoteServiceHandler.callService();
         return ok(response);
     }

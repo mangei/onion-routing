@@ -4,7 +4,7 @@ package model;
  * @author Mihai Lepadat
  *         Date: 11/2/14
  */
-public class ServiceInfo {
+public class QuoteServiceInfo {
 
     private String hostname;
     private String port;
@@ -12,7 +12,7 @@ public class ServiceInfo {
     private String data;
     private String originatorPubKey;
 
-    public ServiceInfo(String hostname, String port, String method, String data, String originatorPubKey) {
+    public QuoteServiceInfo(String hostname, String port, String method, String data, String originatorPubKey) {
         this.hostname = hostname;
         this.port = port;
         this.method = method;

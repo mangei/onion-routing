@@ -10,5 +10,6 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaEbean,
   cache,
-  javaWs
+  javaWs,
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.51"
 )
