@@ -3,10 +3,7 @@ package util;
 import model.ChainNode;
 import play.Logger;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,7 +16,6 @@ public class NodeStorage {
     private static Set<ChainNode> nodeSet;
 
     private static Map<ChainNode, Long> heartbeatMap;
-
 
     static {
         nodeSet = new HashSet<ChainNode>();

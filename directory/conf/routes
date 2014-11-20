@@ -16,3 +16,5 @@ GET         /monitor             controllers.Monitor.index()
 GET         /nodes               controllers.Monitor.listNodes()
 
 PUT         /heartbeat           controllers.Register.heartbeat()
+
+GET         /chain               controllers.Chain.getChain()

@@ -3,6 +3,8 @@ package model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.lang.Long;
+
 /**
  * Created with IntelliJ IDEA.
  * User: thomasrieder
@@ -28,9 +30,20 @@ public class ChainNode {
     private Long lastHeatbeat;
 
     @JsonIgnore
+    private Long lasttimeused=0L;
+
+    @JsonIgnore
     private String secret;
 
     public ChainNode() {
+    }
+
+    public Long getLasttimeused() {
+        return lasttimeused;
+    }
+
+    public void setLasttimeused(Long lasttimeused) {
+        this.lasttimeused = lasttimeused;
     }
 
     public String getIp() {
