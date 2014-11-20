@@ -30,7 +30,7 @@ public class ChainNode {
     private Long lastHeatbeat;
 
     @JsonIgnore
-    private Long lasttimeused;
+    private Long lasttimeused=0L;
 
     @JsonIgnore
     private String secret;

@@ -31,13 +31,6 @@ public class NodeStorage {
         heartbeatMap.put(node, System.currentTimeMillis());
     }
 
-    public static ChainNode getLeastUsedNode(){
-        if(nodeSet.size()<=0) return null;
-        ChainNode cn = Collections.min(nodeSet,new ChainNodeUsedComparator());
-        cn.setLasttimeused(Calendar.getInstance().getTimeInMillis());
-        return cn;
-    }
-
     public static Set<ChainNode> getNodes(String ip, Integer port) {
         Set<ChainNode> retSet = new HashSet<ChainNode>();
 
