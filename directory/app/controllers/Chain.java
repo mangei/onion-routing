@@ -3,6 +3,7 @@ package controllers;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import model.ChainNode;
+import play.Logger;
 import play.libs.Json;
 import play.mvc.Result;
 import util.ChainNodeUsedComparator;
@@ -24,16 +25,35 @@ import static play.mvc.Results.ok;
  */
 public class Chain {
 
-    private static int chainLength = 3;
-    private static int timeout = 10;
+    private static int chainLength;
+    private static int timeout;
 
     static {
+        // set chain length
         try {
-            Properties p = new Properties();
-            p.load(new FileInputStream("./chain.conf"));
-            chainLength = Integer.valueOf(p.getProperty("NODE_NUM", "3"));
-            timeout = Integer.valueOf(p.getProperty("TIMEOUT", "10"));
-        } catch (IOException e) {
+            String CHAIN_LENGTH = System.getenv("CHAIN_LENGTH");
+            if(CHAIN_LENGTH == null){
+                chainLength = 3;
+                Logger.info("CHAIN_NODE_TIMEOUT environment variable is not set");
+            }else{
+                chainLength = Integer.valueOf(CHAIN_LENGTH);
+            }
+        } catch (NumberFormatException e) {
+            chainLength = 3;
+            Logger.info("invalid format of CHAIN_LENGTH environment variable");
+        }
+        // set node timeout
+        try {
+            String CHAIN_NODE_TIMEOUT = System.getenv("CHAIN_NODE_TIMEOUT");
+            if(CHAIN_NODE_TIMEOUT == null){
+                timeout = 15;
+                Logger.info("CHAIN_NODE_TIMEOUT environment variable is not set");
+            }else{
+                timeout = Integer.valueOf(CHAIN_NODE_TIMEOUT);
+            }
+        } catch (NumberFormatException e) {
+            timeout = 15;
+            Logger.info("invalid format of CHAIN_NODE_TIMEOUT environment variable");
         }
     }
 
