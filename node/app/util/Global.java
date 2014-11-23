@@ -1,8 +1,7 @@
 package util;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import handlers.KeyHandler;
+import model.HeartbeatRequest;
 import model.RegisterRequest;
 import play.Application;
 import play.GlobalSettings;
@@ -16,10 +15,6 @@ import play.libs.ws.WSResponse;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/**
- * @author Mihai Lepadat
- *         Date: 11/18/14
- */
 public class Global extends GlobalSettings {
 
     private final static long REQUEST_WAITING_TIME = 10000;
@@ -27,21 +22,23 @@ public class Global extends GlobalSettings {
     private final static String PORT_DIRECTORY_NODE = "9001";
     private final static int HEARTBEAT_PERIOD = 5000;
 
-    private static KeyHandler keyHandler;
+    private static KeyManager keyManager;
 
     @Override
     public void onStart(Application app) {
         Logger.info("Application has started");
 
-        keyHandler = new KeyHandler();
+        keyManager = new KeyManager();
 
         final String secret = registerNode();
 
-        startHeartbeat(secret);
+        HeartbeatRequest heartbeatRequest = new HeartbeatRequest();
+        heartbeatRequest.setSecret(secret);
+        startHeartbeat(heartbeatRequest);
     }
 
     private String registerNode() {
-        String pubKey = keyHandler.getPublicKey();
+        String pubKey = keyManager.getPublicKey();
         RegisterRequest registerRequest = buildRegisterRequest(pubKey);
 
         JsonNode json = Json.toJson(registerRequest);
@@ -61,7 +58,7 @@ public class Global extends GlobalSettings {
         return result;
     }
 
-    private void startHeartbeat(final String secret) {
+    private void startHeartbeat(final HeartbeatRequest heartbeatRequest) {
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -69,7 +66,7 @@ public class Global extends GlobalSettings {
                 Logger.debug("Sending heartbeat...");
                 F.Promise<String> promise = WS.url(getUri(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "heartbeat"))
                         .setContentType("application/json")
-                        .put(JsonUtility.convertToJson(secret))
+                        .put(Json.toJson(heartbeatRequest))
                         .map(new F.Function<WSResponse, String>() {
                             @Override
                             public String apply(WSResponse wsResponse) throws Throwable {
@@ -104,7 +101,7 @@ public class Global extends GlobalSettings {
         return registerRequest;
     }
 
-    public static KeyHandler getKeyHandler() {
-        return keyHandler;
+    public static KeyManager getKeyManager() {
+        return keyManager;
     }
 }

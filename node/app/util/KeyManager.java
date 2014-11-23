@@ -1,22 +1,16 @@
-package handlers;
-
-import util.EncryptionHelper;
+package util;
 
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
-/**
- * @author Mihai Lepadat
- *         Date: 11/18/14
- */
-public class KeyHandler {
+public class KeyManager {
 
     private String publicKey;
     private String privateKey;
 
-    public KeyHandler() {
+    public KeyManager() {
         KeyPair keyPair = generateKeyPair();
         publicKey = getPublicKey(keyPair);
         privateKey = getPrivateKey(keyPair);
@@ -24,7 +18,7 @@ public class KeyHandler {
 
     private KeyPair generateKeyPair() {
         try {
-            return EncryptionHelper.getRSAKeyPair();
+            return EncryptionUtil.getRSAKeyPair();
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             e.printStackTrace();
         }
@@ -33,7 +27,7 @@ public class KeyHandler {
 
     private String getPublicKey(KeyPair keyPair) {
         try {
-            return EncryptionHelper.keyToString(keyPair.getPublic());
+            return EncryptionUtil.keyToString(keyPair.getPublic());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -42,7 +36,7 @@ public class KeyHandler {
 
     private String getPrivateKey(KeyPair keyPair) {
         try {
-            return EncryptionHelper.keyToString(keyPair.getPrivate());
+            return EncryptionUtil.keyToString(keyPair.getPrivate());
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -6,23 +6,16 @@ import model.ChainNode;
 import play.Logger;
 import play.libs.Json;
 import play.mvc.Result;
-import util.ChainNodeUsedComparator;
+import comparator.ChainNodeUsedComparator;
 import util.NodeStorage;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Properties;
 
 import static play.mvc.Results.badRequest;
 import static play.mvc.Results.ok;
 
-/**
- * Created by markus on 15.11.2014.
- */
 public class Chain {
 
     private static int chainLength;

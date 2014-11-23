@@ -1,28 +1,25 @@
 package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import handlers.QuoteServiceHandler;
-import model.QuoteServiceInfo;
+import handlers.TargetServiceHandler;
+import model.EncryptedNodeRequest;
+import model.NodeRequest;
+import model.TargetServiceRequest;
 import play.Logger;
 import play.libs.F;
 import play.libs.Json;
 import play.libs.ws.WS;
 import play.libs.ws.WSResponse;
-import play.mvc.*;
-import util.EncodingUtility;
-import util.EncryptionHelper;
+import play.mvc.Controller;
+import play.mvc.Result;
+import util.EncodingUtil;
+import util.EncryptionUtil;
 import util.Global;
-import util.JsonUtility;
 
 import javax.crypto.IllegalBlockSizeException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 
-/**
- * @author Mihai Lepadat
- *         Date: 11/1/14
- */
 public class RequestController extends Controller {
 
     private static long REQUEST_WAITING_TIME = 1000;
@@ -34,33 +31,30 @@ public class RequestController extends Controller {
         if (json == null) {
             return badRequest("Expecting Json data");
         } else {
-            String encryptedPayload = EncodingUtility.decodeMessage(JsonUtility.getResource(json, "payload"));
-            String payload;
+            /*
+             * Decrypt request
+             */
+            EncryptedNodeRequest encryptedNodeRequest = Json.fromJson(json, EncryptedNodeRequest.class);
+            String encryptedPayload = EncodingUtil.decodeMessage(encryptedNodeRequest.getPayload());
+            String decryptedPayload;
             try {
-                payload = decryptPayload(encryptedPayload);
+                decryptedPayload = decryptPayload(encryptedPayload);
             } catch (IllegalBlockSizeException | InvalidKeyException e) {
                 Logger.debug("Could not decrypt message");
                 return badRequest("Could not decrypt message");
             }
 
-            Logger.debug("decoded payload:" + payload.replaceAll("\r", ""));
+            /*
+             * Process request
+             */
+            NodeRequest nodeRequest = Json.fromJson(Json.parse(decryptedPayload), NodeRequest.class);
+            Logger.debug(nodeRequest.toString());
 
-            json = JsonUtility.convertToJson(payload);
-
-            String nextPayload = JsonUtility.getResource(json, "payload");
-            String ip = JsonUtility.getResource(json, "target/ip");
-            String port = JsonUtility.getResource(json, "target/port");
-
-            Logger.debug("next payload (encoded): " + nextPayload);
-            Logger.debug("ip: " + ip);
-            Logger.debug("port: " + port);
-
-
-            if (!isExitNode(ip, port)) {
-                return requestNextNode(nextPayload, ip, port);
+            if (!isExitNode(nodeRequest)) {
+                return processNextNode(nodeRequest);
             } else {
                 try {
-                    return produceResponse(payload);
+                    return processServiceRequest(nodeRequest);
                 } catch (IllegalBlockSizeException | InvalidKeyException e) {
                     Logger.debug("Could not encrypt message with originator's key");
                     return badRequest("Could not encrypt message with originator's key");
@@ -70,19 +64,21 @@ public class RequestController extends Controller {
     }
 
     private static String decryptPayload(String payload) throws IllegalBlockSizeException, InvalidKeyException {
-        Key key = EncryptionHelper.stringToKey(Global.getKeyHandler().getPrivateKey());
-        payload = EncryptionHelper.decryptMessage(payload, key);
+        Key key = EncryptionUtil.stringToKey(Global.getKeyManager().getPrivateKey());
+        payload = EncryptionUtil.decryptMessage(payload, key);
         return payload;
     }
 
-    private static Result requestNextNode(String payload, String ip, String port) {
+    private static Result processNextNode(NodeRequest nodeRequest) {
         Logger.info("Request next node");
-        ObjectNode jsonRequest = Json.newObject();
-        jsonRequest.put("payload", payload);
+        EncryptedNodeRequest encryptedNodeRequest = new EncryptedNodeRequest();
+        encryptedNodeRequest.setPayload(nodeRequest.getPayload());
 
-        F.Promise<String> promise = WS.url(getUri(ip, port))
+        String nextNodeUrl = createNextNodeUrl(nodeRequest.getTarget());
+
+        F.Promise<String> promise = WS.url(nextNodeUrl)
                 .setContentType("application/json")
-                .post(jsonRequest)
+                .post(Json.toJson(encryptedNodeRequest))
                 .map(new F.Function<WSResponse, String>() {
                     @Override
                     public String apply(WSResponse wsResponse) throws Throwable {
@@ -95,31 +91,25 @@ public class RequestController extends Controller {
         return ok(result);
     }
 
-    private static String getUri(String ip, String port) {
-        return "http://" + ip + ":" + port +"/request";
+    private static String createNextNodeUrl(NodeRequest.Target target) {
+        return "http://" + target.getIp() + ":" + target.getPort() +"/request";
     }
 
-    private static Result produceResponse(String payload) throws IllegalBlockSizeException, InvalidKeyException {
-        Logger.info("Request the service");
-        JsonNode json = JsonUtility.convertToJson(payload);
-        String hostname = JsonUtility.getResource(json, "hostname");
-        String port = JsonUtility.getResource(json, "port");
-        String method = JsonUtility.getResource(json, "method");
-        String data = JsonUtility.getResource(json, "data");
+    private static Result processServiceRequest(NodeRequest nodeRequest) throws IllegalBlockSizeException, InvalidKeyException {
+        Logger.info("Request the target service");
+        TargetServiceRequest targetServiceRequest = nodeRequest.getTargetServiceRequest();
+        TargetServiceHandler targetServiceHandler = new TargetServiceHandler(targetServiceRequest);
+        String response = targetServiceHandler.callService();
 
-        QuoteServiceInfo quoteServiceInfo = new QuoteServiceInfo(hostname, port, method, data);
-        QuoteServiceHandler quoteServiceHandler = new QuoteServiceHandler(quoteServiceInfo);
-        String response = quoteServiceHandler.callService();
-
-        String originatorPubKey = JsonUtility.getResource(json, "originator_public_key");
-        Key key = EncryptionHelper.stringToKey(originatorPubKey);
-        String encryptedResponse = EncryptionHelper.encryptMessage(response, key);
+        String originatorPubKey = targetServiceRequest.getOriginatorPubKey();
+        Key key = EncryptionUtil.stringToKey(originatorPubKey);
+        String encryptedResponse = EncryptionUtil.encryptMessage(response, key);
 
         return ok(encryptedResponse);
     }
 
-    private static boolean isExitNode(String ip, String port) {
-        return !ip.isEmpty() && !port.isEmpty();
+    private static boolean isExitNode(NodeRequest nodeRequest) {
+        return nodeRequest.getTargetServiceRequest() != null;
     }
 
 }

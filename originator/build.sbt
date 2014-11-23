@@ -11,5 +11,7 @@ libraryDependencies ++= Seq(
   javaEbean,
   cache,
   javaWs,
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.51"
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.51",
+  "commons-validator" % "commons-validator" % "1.4.0",
+  "org.apache.httpcomponents" % "httpclient" % "4.3.6"
 )

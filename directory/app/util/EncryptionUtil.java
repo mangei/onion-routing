@@ -14,7 +14,7 @@ import java.security.*;
  * Date: 29.10.14
  * Time: 15:25
  */
-public class EncryptionHelper {
+public class EncryptionUtil {
 
     public static boolean isPublicKey(String publicKey) {
 

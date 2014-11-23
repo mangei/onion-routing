@@ -2,11 +2,7 @@ package util;
 
 import org.apache.commons.codec.binary.Base64;
 
-/**
- * @author Mihai Lepadat
- *         Date: 11/2/14
- */
-public class EncodingUtility {
+public class EncodingUtil {
 
     public static String encodeMessage(String message) {
         byte[] bytesEncoded = Base64.encodeBase64(message.getBytes());

@@ -9,19 +9,13 @@ import play.Logger;
 import play.libs.Json;
 import play.mvc.BodyParser;
 import play.mvc.Result;
-import util.DirectoryHelper;
+import util.DirectoryUtil;
 import util.NodeStorage;
 
 import static play.mvc.Controller.request;
 import static play.mvc.Results.badRequest;
 import static play.mvc.Results.ok;
 
-/**
- * Created with IntelliJ IDEA.
- * User: thomasrieder
- * Date: 29.10.14
- * Time: 14:54
- */
 public class Register {
 
     @BodyParser.Of(BodyParser.Json.class)
@@ -34,8 +28,8 @@ public class Register {
             try {
                 RegisterRequest registerRequest = Json.fromJson(json, RegisterRequest.class);
 
-                if (registerRequest != null && DirectoryHelper.verifyRegisterRequest(registerRequest)) {
-                    String secret = DirectoryHelper.nextSessionId();
+                if (registerRequest != null && DirectoryUtil.verifyRegisterRequest(registerRequest)) {
+                    String secret = DirectoryUtil.nextSessionId();
                     result.put("secret", secret);
 
                     ChainNode node = new ChainNode();
