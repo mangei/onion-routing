@@ -6,6 +6,10 @@ import play.api.libs.json._
 
 object Application extends Controller {
 
+  val index = Action { request =>
+    Ok("Quote says hello!")
+  }
+
   val getAQuote = Action { request =>
     val quote = Quote.getRandomQuote
     Ok(Json.toJson(JsObject(Seq("quote" -> JsString(quote.text + " - " + quote.author)))))

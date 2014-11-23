@@ -25,22 +25,30 @@ public class Global extends GlobalSettings {
 
     @Override
     public void onStart(Application app) {
-        Logger.info("Application has started");
+        Logger.info("Application is starting...");
 
         // init configuration
         config = new Config();
+        Logger.info("Configuration loaded!");
 
         // init key manager
         keyManager = new KeyManager();
+        Logger.info("Keys generated!");
 
+        Logger.info("Register node...");
         // register node
         RegisterResponse registerResponse = registerNode();
         String secret = registerResponse.getSecret();
+
+        Logger.info("Node registered!");
+        Logger.info("Received secret: " + secret);
 
         // start heartbeat
         HeartbeatRequest heartbeatRequest = new HeartbeatRequest();
         heartbeatRequest.setSecret(secret);
         startHeartbeat(heartbeatRequest);
+
+        Logger.info("Application has started");
     }
 
     private RegisterResponse registerNode() {

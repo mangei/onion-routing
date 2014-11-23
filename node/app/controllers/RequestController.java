@@ -15,6 +15,7 @@ import play.mvc.Result;
 import util.EncodingUtil;
 import util.EncryptionUtil;
 import util.Global;
+import util.UrlUtil;
 
 import javax.crypto.IllegalBlockSizeException;
 import java.security.InvalidKeyException;
@@ -48,7 +49,7 @@ public class RequestController extends Controller {
              * Process request
              */
             NodeRequest nodeRequest = Json.fromJson(Json.parse(decryptedPayload), NodeRequest.class);
-            Logger.debug(nodeRequest.toString());
+            Logger.info(nodeRequest.toString());
 
             if (!isExitNode(nodeRequest)) {
                 return processNextNode(nodeRequest);
@@ -74,7 +75,10 @@ public class RequestController extends Controller {
         EncryptedNodeRequest encryptedNodeRequest = new EncryptedNodeRequest();
         encryptedNodeRequest.setPayload(nodeRequest.getPayload());
 
-        String nextNodeUrl = createNextNodeUrl(nodeRequest.getTarget());
+        String nextNodeUrl = UrlUtil.createHttpUrl(
+                nodeRequest.getTarget().getIp(),
+                nodeRequest.getTarget().getPort(),
+                "request");
 
         F.Promise<String> promise = WS.url(nextNodeUrl)
                 .setContentType("application/json")
@@ -89,10 +93,6 @@ public class RequestController extends Controller {
         String result = promise.get(REQUEST_WAITING_TIME);
         Logger.info("Got message: " + result);
         return ok(result);
-    }
-
-    private static String createNextNodeUrl(NodeRequest.Target target) {
-        return "http://" + target.getIp() + ":" + target.getPort() +"/request";
     }
 
     private static Result processServiceRequest(NodeRequest nodeRequest) throws IllegalBlockSizeException, InvalidKeyException {

@@ -3,6 +3,7 @@
 # ~~~~
 
 # Home page
+GET     /                      controllers.Application.index()
 GET     /quote                      controllers.Application.getAQuote()
 
 # Map static resources from the /public folder to the /assets URL path

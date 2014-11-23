@@ -10,13 +10,12 @@ public class Config {
     private DirectoryConfig directoryConfig = new DirectoryConfig();
 
     public Config() {
-        Config config = new Config();
         Configuration configuration = Play.application().configuration();
-        config.setIp(configuration.getString("http.address"));
-        config.setPort(configuration.getInt("http.port"));
-        config.getDirectoryConfig().setIp(configuration.getString("directory.http.port"));
-        config.getDirectoryConfig().setPort(configuration.getInt("directory.http.port"));
-        Logger.debug("Configuration: " + config);
+        setIp(configuration.getString("http.address"));
+        setPort(configuration.getInt("http.port"));
+        getDirectoryConfig().setIp(configuration.getString("directory.http.port"));
+        getDirectoryConfig().setPort(configuration.getInt("directory.http.port"));
+        Logger.info("Configuration: " + toString());
     }
 
     public String getIp() {
