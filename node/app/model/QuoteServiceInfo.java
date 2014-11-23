@@ -10,14 +10,28 @@ public class QuoteServiceInfo {
     private String port;
     private String method;
     private String data;
-    private String originatorPubKey;
 
-    public QuoteServiceInfo(String hostname, String port, String method, String data, String originatorPubKey) {
+    public QuoteServiceInfo(String hostname, String port, String method, String data) {
         this.hostname = hostname;
         this.port = port;
         this.method = method;
         this.data = data;
-        this.originatorPubKey = originatorPubKey;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public String getData() {
+        return data;
     }
 
 }
