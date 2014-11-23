@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import model.HeartbeatRequest;
 import model.RegisterRequest;
 import model.RegisterResponse;
-import play.Application;
-import play.GlobalSettings;
-import play.Logger;
-import play.Play;
+import play.*;
 import play.libs.F;
 import play.libs.Json;
 import play.libs.ws.WS;
@@ -20,14 +17,18 @@ public class Global extends GlobalSettings {
 
     private final static long REQUEST_WAITING_TIME = 10000;
     private final static String ADDRESS_DIRECTORY_NODE = "127.0.0.1";
-    private final static String PORT_DIRECTORY_NODE = "9001";
+    private final static String PORT_DIRECTORY_NODE = "9005";
     private final static int HEARTBEAT_PERIOD = 5000;
 
     private static KeyManager keyManager;
+    private static Config config;
 
     @Override
     public void onStart(Application app) {
         Logger.info("Application has started");
+
+        // init configuration
+        config = new Config();
 
         // init key manager
         keyManager = new KeyManager();
@@ -90,20 +91,19 @@ public class Global extends GlobalSettings {
     }
 
     private RegisterRequest buildRegisterRequest(String pubKey) {
-        String ip = Play.application().configuration().getString("http.address");
-        int port = Play.application().configuration().getInt("http.port");
-
-        Logger.debug("App ip: " + ip);
-        Logger.debug("App port: " + port);
-
         RegisterRequest registerRequest = new RegisterRequest();
         registerRequest.setPublicKey(pubKey);
-        registerRequest.setIp(ip);
-        registerRequest.setPort(port);
+        registerRequest.setIp(config.getIp());
+        registerRequest.setPort(config.getPort());
         return registerRequest;
     }
 
     public static KeyManager getKeyManager() {
         return keyManager;
     }
+
+    public static Config getConfig() {
+        return config;
+    }
+
 }

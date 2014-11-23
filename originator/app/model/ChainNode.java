@@ -62,4 +62,12 @@ public class ChainNode {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "ChainNode{" +
+                "ip='" + ip + '\'' +
+                ", port=" + port +
+                ", publicKey='" + publicKey + '\'' +
+                '}';
+    }
 }

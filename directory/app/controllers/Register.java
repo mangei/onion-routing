@@ -2,6 +2,7 @@ package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import model.*;
+import play.Logger;
 import play.libs.Json;
 import play.mvc.BodyParser;
 import play.mvc.Result;
@@ -21,6 +22,8 @@ public class Register {
             try {
                 RegisterRequest registerRequest = Json.fromJson(json, RegisterRequest.class);
 
+                Logger.info("register request: " + registerRequest);
+
                 if (registerRequest != null && DirectoryUtil.verifyRegisterRequest(registerRequest)) {
                     String secret = DirectoryUtil.nextSessionId();
 
@@ -36,6 +39,8 @@ public class Register {
                     node.setLastHeatbeat(System.currentTimeMillis());
 
                     NodeStorage.addNode(node);
+
+                    Logger.info("node was added: " + node);
 
                     // TODO remove - just here for testing
                     // result.put("public_key", EncryptionHelper.keyToString(EncryptionHelper.getRSAKeyPair().getPublic()));
