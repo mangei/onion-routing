@@ -13,13 +13,7 @@ import java.io.*;
 import java.security.*;
 import java.util.Arrays;
 
-/**
- * Created with IntelliJ IDEA.
- * User: thomasrieder
- * Date: 29.10.14
- * Time: 15:25
- */
-public class EncryptionHelper {
+public class EncryptionUtil {
 
     public static String encryptMessage(String msg, Key k) throws InvalidKeyException, IllegalBlockSizeException {
         int start, end;
