@@ -3,6 +3,8 @@ package util;
 import model.RegisterRequest;
 import org.apache.commons.validator.routines.InetAddressValidator;
 
+import play.Logger;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashSet;
@@ -32,18 +34,22 @@ public class DirectoryHelper {
         Integer port = request.getPort();
 
         if (publicKey == null || ip == null || port == null) {
+            Logger.debug("publicKey/ip/port null");
             return false;
         }
 
         if (port <= 0 || port >= 65536) {
+            Logger.debug("invalid port: " + port);
             return false;
         }
 
         if (!InetAddressValidator.getInstance().isValidInet4Address(ip)) {
+            Logger.debug("invalid ipv4 address: " + ip);
             return false;
         }
 
         if (!EncryptionHelper.isPublicKey(publicKey)) {
+            Logger.debug("invalid public key: " + publicKey);
             return false;
         }
 

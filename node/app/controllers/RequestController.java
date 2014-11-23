@@ -10,7 +10,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import play.Logger;
+import play.libs.F;
 import play.libs.Json;
+import play.libs.ws.WS;
+import play.libs.ws.WSResponse;
 import play.mvc.*;
 import util.EncodingUtility;
 import util.Global;
@@ -25,6 +28,8 @@ import java.util.Scanner;
  *         Date: 11/1/14
  */
 public class RequestController extends Controller {
+
+    private static long REQUEST_WAITING_TIME = 1000;
 
     // curl --header "Content-type: application/json" --request POST --data-binary @data.json http://localhost:9000/request
     public static Result requestMessage() {
@@ -56,26 +61,22 @@ public class RequestController extends Controller {
 
     private static Result requestNextNode(String payload, String ip, String port) {
         Logger.info("Request next node");
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost(getUri(ip, port));
-        ObjectNode result = Json.newObject();
-        result.put("payload", payload);
+        ObjectNode jsonRequest = Json.newObject();
+        jsonRequest.put("payload", payload);
 
-        try {
-            httpPost.setEntity(new StringEntity(result.toString()));
-            httpPost.setHeader("Accept", "application/json");
-            httpPost.setHeader("Content-type", "application/json");
-            HttpResponse httpResponse = httpclient.execute(httpPost);
-            InputStream inputStream = httpResponse.getEntity().getContent();
-            String inputStreamString = new Scanner(inputStream,"UTF-8").useDelimiter("\\A").next();
+        F.Promise<String> promise = WS.url(getUri(ip, port))
+                .setContentType("application/json")
+                .post(jsonRequest)
+                .map(new F.Function<WSResponse, String>() {
+                    @Override
+                    public String apply(WSResponse wsResponse) throws Throwable {
+                        return wsResponse.getBody();
+                    }
+                });
 
-            Logger.info("Got message: " + inputStreamString);
-            return ok(inputStreamString);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return badRequest();
+        String result = promise.get(REQUEST_WAITING_TIME);
+        Logger.info("Got message: " + result);
+        return ok(result);
     }
 
     private static String getUri(String ip, String port) {
