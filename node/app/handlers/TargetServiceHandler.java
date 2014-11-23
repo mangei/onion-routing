@@ -7,16 +7,17 @@ import play.libs.ws.WSResponse;
 
 public class TargetServiceHandler {
 
-    private TargetServiceRequest targetServiceInfo;
     private final static long REQUEST_WAITING_TIME = 10000;
 
-    public TargetServiceHandler(TargetServiceRequest quoteServiceInfo) {
-        this.targetServiceInfo = quoteServiceInfo;
+    private TargetServiceRequest targetServiceRequest;
+
+    public TargetServiceHandler(TargetServiceRequest targetServiceRequest) {
+        this.targetServiceRequest = targetServiceRequest;
     }
 
     public String callService() {
-        String url = targetServiceInfo.getUrl();
-        String method = targetServiceInfo.getMethod();
+        String url = targetServiceRequest.getUrl();
+        String method = targetServiceRequest.getMethod();
 
         // TODO currently we only support GET requests
         if (method.equals("GET")) {

@@ -1,6 +1,7 @@
 package controllers;
 
 import model.ChainNode;
+import model.ListNodesResponse;
 import play.libs.Json;
 import play.mvc.Result;
 import util.NodeStorage;
@@ -17,12 +18,14 @@ public class Monitor {
     }
 
     public static Result listNodes() {
+        ListNodesResponse listNodesResponse = new ListNodesResponse();
 
         Set<ChainNode> nodes = NodeStorage.getNodes();
         for (ChainNode node : nodes) {
             node.setLastHeatbeat(NodeStorage.getLastHeartbeatForNode(node));
+            listNodesResponse.getChainNodes().add(node);
         }
 
-        return ok(Json.toJson(nodes));
+        return ok(Json.toJson(listNodesResponse));
     }
 }

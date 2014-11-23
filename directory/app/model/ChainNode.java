@@ -117,4 +117,17 @@ public class ChainNode {
         result = 31 * result + (secret != null ? secret.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ChainNode{" +
+                "ip='" + ip + '\'' +
+                ", port=" + port +
+                ", publicKey='" + publicKey + '\'' +
+                ", registerDate=" + registerDate +
+                ", lastHeatbeat=" + lastHeatbeat +
+                ", lasttimeused=" + lasttimeused +
+                ", secret='" + secret + '\'' +
+                '}';
+    }
 }

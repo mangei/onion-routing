@@ -3,6 +3,7 @@ package util;
 import com.fasterxml.jackson.databind.JsonNode;
 import model.HeartbeatRequest;
 import model.RegisterRequest;
+import model.RegisterResponse;
 import play.Application;
 import play.GlobalSettings;
 import play.Logger;
@@ -28,21 +29,25 @@ public class Global extends GlobalSettings {
     public void onStart(Application app) {
         Logger.info("Application has started");
 
+        // init key manager
         keyManager = new KeyManager();
 
-        final String secret = registerNode();
+        // register node
+        RegisterResponse registerResponse = registerNode();
+        String secret = registerResponse.getSecret();
 
+        // start heartbeat
         HeartbeatRequest heartbeatRequest = new HeartbeatRequest();
         heartbeatRequest.setSecret(secret);
         startHeartbeat(heartbeatRequest);
     }
 
-    private String registerNode() {
+    private RegisterResponse registerNode() {
         String pubKey = keyManager.getPublicKey();
         RegisterRequest registerRequest = buildRegisterRequest(pubKey);
 
         JsonNode json = Json.toJson(registerRequest);
-        F.Promise<String> promise = WS.url(getUri(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "register"))
+        F.Promise<String> promise = WS.url(UrlUtil.createHttpUrl(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "register"))
                 .setContentType("application/json")
                 .post(json)
                 .map(new F.Function<WSResponse, String>() {
@@ -53,9 +58,10 @@ public class Global extends GlobalSettings {
                 });
 
         String result = promise.get(REQUEST_WAITING_TIME);
-        Logger.debug("Registration result: " + result);
+        RegisterResponse registerResponse = Json.fromJson(Json.parse(result), RegisterResponse.class);
+        Logger.debug("Registration result: " + registerResponse);
 
-        return result;
+        return registerResponse;
     }
 
     private void startHeartbeat(final HeartbeatRequest heartbeatRequest) {
@@ -64,7 +70,7 @@ public class Global extends GlobalSettings {
             @Override
             public void run() {
                 Logger.debug("Sending heartbeat...");
-                F.Promise<String> promise = WS.url(getUri(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "heartbeat"))
+                F.Promise<String> promise = WS.url(UrlUtil.createHttpUrl(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "heartbeat"))
                         .setContentType("application/json")
                         .put(Json.toJson(heartbeatRequest))
                         .map(new F.Function<WSResponse, String>() {
@@ -81,10 +87,6 @@ public class Global extends GlobalSettings {
     @Override
     public void onStop(Application app) {
         Logger.info("Application shutdown");
-    }
-
-    private static String getUri(String ip, String port, String path) {
-        return "http://" + ip + ":" + port +"/" + path;
     }
 
     private RegisterRequest buildRegisterRequest(String pubKey) {

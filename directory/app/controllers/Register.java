@@ -1,11 +1,7 @@
 package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import model.ChainNode;
-import model.RegisterRequest;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import play.Logger;
+import model.*;
 import play.libs.Json;
 import play.mvc.BodyParser;
 import play.mvc.Result;
@@ -20,17 +16,16 @@ public class Register {
 
     @BodyParser.Of(BodyParser.Json.class)
     public static Result register() {
-
         JsonNode json = request().body().asJson();
-        ObjectNode result = Json.newObject();
-
         if (json != null) {
             try {
                 RegisterRequest registerRequest = Json.fromJson(json, RegisterRequest.class);
 
                 if (registerRequest != null && DirectoryUtil.verifyRegisterRequest(registerRequest)) {
                     String secret = DirectoryUtil.nextSessionId();
-                    result.put("secret", secret);
+
+                    RegisterResponse registerResponse = new RegisterResponse();
+                    registerResponse.setSecret(secret);
 
                     ChainNode node = new ChainNode();
                     node.setIp(registerRequest.getIp());
@@ -46,39 +41,28 @@ public class Register {
                     // result.put("public_key", EncryptionHelper.keyToString(EncryptionHelper.getRSAKeyPair().getPublic()));
                     // END
 
-                    return ok(result);
-
+                    return ok(Json.toJson(registerResponse));
                 } else {
-                    result.put("error", "Couldn't validate JSON data");
-                    return badRequest(result);
+                    return badRequest(Json.toJson(new ErrorResponse("Couldn't validate JSON data")));
                 }
             } catch (Exception e) {
-                Logger.info(ExceptionUtils.getStackTrace(e));
-                result.put("error", "Couldn't parse JSON data - look at the API specs");
-                return badRequest(result);
-
+                return badRequest(Json.toJson(new ErrorResponse("Couldn't parse JSON data - look at the API specs")));
             }
         } else {
-            result.put("error", "Expecting JSON");
-            return badRequest(result);
+            return badRequest(Json.toJson(new ErrorResponse("Expecting JSON")));
         }
     }
 
     @BodyParser.Of(BodyParser.Json.class)
     public static Result heartbeat() {
         JsonNode json = request().body().asJson();
-        ObjectNode result = Json.newObject();
-
-        if (json != null && json.get("secret") != null) {
-            String secret = json.get("secret").textValue();
-
+        if (json != null) {
+            HeartbeatRequest heartbeatRequest= Json.fromJson(json, HeartbeatRequest.class);
+            String secret = heartbeatRequest.getSecret();
             NodeStorage.updateHeartbeatForNode(secret);
-
-            return ok(result);
-
+            return ok();
         } else {
-            result.put("error", "invalid request json");
-            return badRequest(result);
+            return badRequest(Json.toJson(new ErrorResponse("invalid request json")));
         }
     }
 }

@@ -1,12 +1,12 @@
 package controllers;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import comparator.ChainNodeUsedComparator;
 import model.ChainNode;
+import model.ChainNodesResponse;
+import model.ErrorResponse;
 import play.Logger;
 import play.libs.Json;
 import play.mvc.Result;
-import comparator.ChainNodeUsedComparator;
 import util.NodeStorage;
 
 import java.util.ArrayList;
@@ -23,62 +23,61 @@ public class Chain {
 
     static {
         // set chain length
-        try {
-            String CHAIN_LENGTH = System.getenv("CHAIN_LENGTH");
-            if(CHAIN_LENGTH == null){
-                chainLength = 3;
-                Logger.info("CHAIN_NODE_TIMEOUT environment variable is not set");
-            }else{
-                chainLength = Integer.valueOf(CHAIN_LENGTH);
+        String chainLength = System.getenv("CHAIN_LENGTH");
+        if (chainLength == null) {
+            Chain.chainLength = 3;
+            Logger.info("CHAIN_NODE_TIMEOUT environment variable is not set");
+        } else {
+            try {
+                Chain.chainLength = Integer.valueOf(chainLength);
+            } catch (NumberFormatException e) {
+                Chain.chainLength = 3;
+                Logger.info("invalid format of CHAIN_LENGTH environment variable");
             }
-        } catch (NumberFormatException e) {
-            chainLength = 3;
-            Logger.info("invalid format of CHAIN_LENGTH environment variable");
         }
+
         // set node timeout
-        try {
-            String CHAIN_NODE_TIMEOUT = System.getenv("CHAIN_NODE_TIMEOUT");
-            if(CHAIN_NODE_TIMEOUT == null){
-                timeout = 15;
-                Logger.info("CHAIN_NODE_TIMEOUT environment variable is not set");
-            }else{
-                timeout = Integer.valueOf(CHAIN_NODE_TIMEOUT);
+        String timeout = System.getenv("CHAIN_NODE_TIMEOUT");
+        if (timeout == null) {
+            Chain.timeout = 15;
+            Logger.info("CHAIN_NODE_TIMEOUT environment variable is not set");
+        } else {
+            try {
+                Chain.timeout = Integer.valueOf(timeout);
+            } catch (NumberFormatException e) {
+                Chain.timeout = 15;
+                Logger.info("invalid format of CHAIN_NODE_TIMEOUT environment variable");
             }
-        } catch (NumberFormatException e) {
-            timeout = 15;
-            Logger.info("invalid format of CHAIN_NODE_TIMEOUT environment variable");
         }
     }
 
     public static synchronized Result getChain() {
-        ObjectNode result = Json.newObject();
-        ArrayNode chain = result.putArray("chain_nodes");
+        ChainNodesResponse chainNodesResponse = new ChainNodesResponse();
+
+        ArrayList<ChainNode> nodeList = new ArrayList<>();
+        nodeList.addAll(NodeStorage.getNodes());
+        Collections.sort(nodeList, new ChainNodeUsedComparator());
+
         int nodeCount = 0;
-        ArrayList<ChainNode> nodeArrayList = new ArrayList();
-        nodeArrayList.addAll(NodeStorage.getNodes());
-        ObjectNode obj;
-        ChainNode cn;
-        long diff;
-        Collections.sort(nodeArrayList, new ChainNodeUsedComparator());
-        while (nodeArrayList.size() > 0 && chainLength > nodeCount) {
-            cn = nodeArrayList.get(0);
-            if (cn != null) {
-                diff = Calendar.getInstance().getTimeInMillis() - NodeStorage.getLastHeartbeatForNode(cn);
-                if (diff / 1000 < timeout) {
+        while (nodeList.size() > 0 && chainLength > nodeCount) {
+            ChainNode node = nodeList.get(0);
+            if (node != null) {
+                if (isNodeAlive(node)) {
+                    chainNodesResponse.getChainNodes().add(node);
+                    node.setLasttimeused(Calendar.getInstance().getTimeInMillis());
                     nodeCount++;
-                    obj = chain.addObject();
-                    obj.put("ip", cn.getIp());
-                    obj.put("port", cn.getPort());
-                    obj.put("public_key", cn.getPublicKey());
-                    cn.setLasttimeused(Calendar.getInstance().getTimeInMillis());
                 }
             }
-            nodeArrayList.remove(0);
+            nodeList.remove(0);
         }
         if (chainLength == nodeCount)
-            return ok(result);
-        result = Json.newObject();
-        result.put("error", "not enough nodes");
-        return badRequest(result);
+            return ok(Json.toJson(chainNodesResponse));
+
+        return badRequest(Json.toJson(new ErrorResponse("not enough nodes")));
+    }
+
+    private static boolean isNodeAlive(ChainNode node) {
+        long diff = Calendar.getInstance().getTimeInMillis() - NodeStorage.getLastHeartbeatForNode(node);
+        return diff / 1000 < timeout;
     }
 }
