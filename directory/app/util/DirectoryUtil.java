@@ -10,13 +10,7 @@ import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Created with IntelliJ IDEA.
- * User: thomasrieder
- * Date: 29.10.14
- * Time: 15:18
- */
-public class DirectoryHelper {
+public class DirectoryUtil {
 
     private static SecureRandom random = new SecureRandom();
 
@@ -48,7 +42,7 @@ public class DirectoryHelper {
             return false;
         }
 
-        if (!EncryptionHelper.isPublicKey(publicKey)) {
+        if (!EncryptionUtil.isPublicKey(publicKey)) {
             Logger.debug("invalid public key: " + publicKey);
             return false;
         }

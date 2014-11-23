@@ -1,12 +1,9 @@
-package util;
+package comparator;
 
 import model.ChainNode;
 
 import java.util.Comparator;
 
-/**
- * Created by markus on 15.11.2014.
- */
 public class ChainNodeUsedComparator implements Comparator<ChainNode> {
 
     @Override

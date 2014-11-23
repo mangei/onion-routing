@@ -2,7 +2,7 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class TargetServiceInfo {
+public class TargetServiceRequest {
 
     @JsonProperty("url")
     private String url;

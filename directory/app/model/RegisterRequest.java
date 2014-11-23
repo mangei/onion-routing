@@ -2,12 +2,6 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Created with IntelliJ IDEA.
- * User: thomasrieder
- * Date: 29.10.14
- * Time: 14:51
- */
 public class RegisterRequest {
 
     @JsonProperty("public_key")

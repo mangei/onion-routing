@@ -5,12 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.lang.Long;
 
-/**
- * Created with IntelliJ IDEA.
- * User: thomasrieder
- * Date: 29.10.14
- * Time: 17:47
- */
 public class ChainNode {
 
     @JsonProperty("ip")

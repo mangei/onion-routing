@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import handlers.TargetServiceHandler;
 import model.EncryptedNodeRequest;
 import model.NodeRequest;
-import model.TargetServiceInfo;
+import model.TargetServiceRequest;
 import play.Logger;
 import play.libs.F;
 import play.libs.Json;
@@ -74,7 +74,9 @@ public class RequestController extends Controller {
         EncryptedNodeRequest encryptedNodeRequest = new EncryptedNodeRequest();
         encryptedNodeRequest.setPayload(nodeRequest.getPayload());
 
-        F.Promise<String> promise = WS.url(getUri(nodeRequest.getTarget().getIp(), nodeRequest.getTarget().getPort()))
+        String nextNodeUrl = createNextNodeUrl(nodeRequest.getTarget());
+
+        F.Promise<String> promise = WS.url(nextNodeUrl)
                 .setContentType("application/json")
                 .post(Json.toJson(encryptedNodeRequest))
                 .map(new F.Function<WSResponse, String>() {
@@ -89,17 +91,17 @@ public class RequestController extends Controller {
         return ok(result);
     }
 
-    private static String getUri(String ip, String port) {
-        return "http://" + ip + ":" + port +"/request";
+    private static String createNextNodeUrl(NodeRequest.Target target) {
+        return "http://" + target.getIp() + ":" + target.getPort() +"/request";
     }
 
     private static Result processServiceRequest(NodeRequest nodeRequest) throws IllegalBlockSizeException, InvalidKeyException {
-        Logger.info("Request the service");
-        TargetServiceInfo quoteServiceInfo = nodeRequest.getTargetServiceInfo();
-        TargetServiceHandler quoteServiceHandler = new TargetServiceHandler(quoteServiceInfo);
-        String response = quoteServiceHandler.callService();
+        Logger.info("Request the target service");
+        TargetServiceRequest targetServiceRequest = nodeRequest.getTargetServiceRequest();
+        TargetServiceHandler targetServiceHandler = new TargetServiceHandler(targetServiceRequest);
+        String response = targetServiceHandler.callService();
 
-        String originatorPubKey = quoteServiceInfo.getOriginatorPubKey();
+        String originatorPubKey = targetServiceRequest.getOriginatorPubKey();
         Key key = EncryptionUtil.stringToKey(originatorPubKey);
         String encryptedResponse = EncryptionUtil.encryptMessage(response, key);
 
@@ -107,7 +109,7 @@ public class RequestController extends Controller {
     }
 
     private static boolean isExitNode(NodeRequest nodeRequest) {
-        return nodeRequest.getTargetServiceInfo() != null;
+        return nodeRequest.getTargetServiceRequest() != null;
     }
 
 }

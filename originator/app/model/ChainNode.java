@@ -1,11 +1,7 @@
 package model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sun.net.httpserver.Filter;
 
-/**
- * Created by Lisa on 20.11.2014.
- */
 public class ChainNode {
 
     @JsonProperty("ip")
@@ -16,7 +12,6 @@ public class ChainNode {
 
     @JsonProperty("public_key")
     private String publicKey;
-
 
     public ChainNode(){
     }

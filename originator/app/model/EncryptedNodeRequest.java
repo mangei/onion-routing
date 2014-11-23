@@ -2,10 +2,7 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Created by Lisa on 21.11.2014.
- */
-public class NodeSendMessage {
+public class EncryptedNodeRequest {
 
     @JsonProperty("payload")
     private String payload;

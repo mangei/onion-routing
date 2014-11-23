@@ -1,16 +1,16 @@
 package handlers;
 
-import model.TargetServiceInfo;
+import model.TargetServiceRequest;
 import play.libs.F;
 import play.libs.ws.WS;
 import play.libs.ws.WSResponse;
 
 public class TargetServiceHandler {
 
-    private TargetServiceInfo targetServiceInfo;
+    private TargetServiceRequest targetServiceInfo;
     private final static long REQUEST_WAITING_TIME = 10000;
 
-    public TargetServiceHandler(TargetServiceInfo quoteServiceInfo) {
+    public TargetServiceHandler(TargetServiceRequest quoteServiceInfo) {
         this.targetServiceInfo = quoteServiceInfo;
     }
 

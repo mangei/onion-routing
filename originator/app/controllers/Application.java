@@ -1,15 +1,13 @@
 package controllers;
 
-import play.*;
-import play.mvc.*;
-
-import views.html.*;
+import play.mvc.Controller;
+import play.mvc.Result;
+import views.html.requestButton;
 
 public class Application extends Controller {
 
     public static Result index() {
-      return ok("hello");
-      //  return ok(index.render("Your new application is ready."));
+      return ok("Originator says hello!");
     }
 
     public static Result postRequestButton() {

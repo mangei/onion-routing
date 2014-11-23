@@ -1,23 +1,13 @@
 package controllers;
 
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import model.*;
+import model.ChainNode;
+import model.EncryptedNodeRequest;
+import model.NodeRequest;
+import model.TargetServiceRequest;
 import org.apache.commons.validator.routines.InetAddressValidator;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import play.Logger;
 import play.libs.F;
 import play.libs.Json;
@@ -25,26 +15,17 @@ import play.libs.ws.WS;
 import play.libs.ws.WSResponse;
 import play.mvc.Controller;
 import play.mvc.Result;
-import play.mvc.WebSocket;
 import play.twirl.api.Html;
-import util.EncryptionHelper;
+import util.EncryptionUtil;
+import util.UrlUtil;
 import views.html.main;
 
 import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
-/**
- * Created by Lisa on 20.11.2014.
- */
 public class RequestController extends Controller {
 
     public static Result requestMessage() {
@@ -62,7 +43,7 @@ public class RequestController extends Controller {
         KeyPair originator_key = null;
         String decryptServiceResponse = null;
         try {
-            originator_key = EncryptionHelper.getRSAKeyPair();
+            originator_key = EncryptionUtil.getRSAKeyPair();
 
         } catch (NoSuchAlgorithmException e1) {
             e1.printStackTrace();
@@ -86,7 +67,7 @@ public class RequestController extends Controller {
                 return badRequest();
             } else {
                 // save pub key in array - reverse order
-                nodes_pubKey_reverse[j - i] = EncryptionHelper.stringToKey(n.getPublicKey());
+                nodes_pubKey_reverse[j - i] = EncryptionUtil.stringToKey(n.getPublicKey());
             }
         }
 
@@ -107,14 +88,13 @@ public class RequestController extends Controller {
                 // encrypt ExitNodeMessage with public key of exit node
                 // encryption result is payload in next message
                 try {
-                    ExitNodeMessage exitMessage = new ExitNodeMessage();
-                    exitMessage.setHostname("http://testhost.at");
-                    exitMessage.setMethod("testmethod");
-                    exitMessage.setPort(9999);
-                    exitMessage.setOriginator_public_key(EncryptionHelper.keyToString(originator_key.getPublic()));
-                    exitMessage.setData("testdatatestdata");
+                    TargetServiceRequest targetServiceRequest = new TargetServiceRequest();
+                    targetServiceRequest.setUrl(UrlUtil.createHttpUrl("testhost.at", "9999", "quote"));
+                    targetServiceRequest.setMethod("testmethod");
+                    targetServiceRequest.setOriginatorPubKey(EncryptionUtil.keyToString(originator_key.getPublic()));
+                    targetServiceRequest.setData("testdatatestdata");
 
-                    payload = EncryptionHelper.encryptMessage(mapper.writeValueAsString(exitMessage), k);
+                    payload = EncryptionUtil.encryptMessage(mapper.writeValueAsString(targetServiceRequest), k);
                 } catch (InvalidKeyException e) {
                     e.printStackTrace();
                     Logger.error(e.getMessage());
@@ -135,17 +115,16 @@ public class RequestController extends Controller {
                     return badRequest();
                 } else {
 
-                    TargetType target = new TargetType();
-                    target.setIp(n.getIp());
-                    target.setPort(n.getPort());
+                    TargetServiceRequest targetServiceRequest = new TargetServiceRequest();
+                    targetServiceRequest.setUrl(UrlUtil.createHttpUrl("" + n.getIp(), "" + n.getPort(), "quote"));
 
-                    InterNodeMessage interMessage = new InterNodeMessage();
-                    interMessage.setPayload(payload);
-                    interMessage.setTarget(target);
+                    NodeRequest nodeRequest = new NodeRequest();
+                    nodeRequest.setPayload(payload);
+                    nodeRequest.setTargetServiceRequest(targetServiceRequest);
 
                     try {
 
-                        payload = EncryptionHelper.encryptMessage(mapper.writeValueAsString(interMessage), k);
+                        payload = EncryptionUtil.encryptMessage(mapper.writeValueAsString(nodeRequest), k);
 
                     } catch (InvalidKeyException e) {
                         e.printStackTrace();
@@ -172,7 +151,7 @@ public class RequestController extends Controller {
 
         } else {
             ChainNode entryNode = nodes[0];
-            NodeSendMessage sendMessage = new NodeSendMessage();
+            EncryptedNodeRequest sendMessage = new EncryptedNodeRequest();
             sendMessage.setPayload(payload);
             JsonNode sendJson = Json.toJson(sendMessage);
 
@@ -193,7 +172,7 @@ public class RequestController extends Controller {
 
             try {
                 Logger.debug("response from service: " + result);
-                decryptServiceResponse = EncryptionHelper.decryptMessage(result, originator_key.getPrivate());
+                decryptServiceResponse = EncryptionUtil.decryptMessage(result, originator_key.getPrivate());
             } catch (InvalidKeyException e) {
                 e.printStackTrace();
                 Logger.error(e.getMessage());
@@ -231,7 +210,7 @@ public class RequestController extends Controller {
             return false;
         }
 
-        if (!EncryptionHelper.isPublicKey(node.getPublicKey())) {
+        if (!EncryptionUtil.isPublicKey(node.getPublicKey())) {
             Logger.debug("invalid public key");
             return false;
         }
@@ -247,9 +226,9 @@ public class RequestController extends Controller {
         try {
 
             // !-------- set chain node manually - only temp solution
-            KeyPair key1 = EncryptionHelper.getRSAKeyPair();
-            KeyPair key2 = EncryptionHelper.getRSAKeyPair();
-            KeyPair key3 = EncryptionHelper.getRSAKeyPair();
+            KeyPair key1 = EncryptionUtil.getRSAKeyPair();
+            KeyPair key2 = EncryptionUtil.getRSAKeyPair();
+            KeyPair key3 = EncryptionUtil.getRSAKeyPair();
 
             List<ChainNode> list_nodes_in = new ArrayList<ChainNode>();
             ChainNode node1 = new ChainNode();
@@ -261,9 +240,9 @@ public class RequestController extends Controller {
             node1.setPort(9001);
             node2.setPort(9002);
             node3.setPort(9003);
-            node1.setPublicKey(EncryptionHelper.keyToString(key1.getPublic()));
-            node2.setPublicKey(EncryptionHelper.keyToString(key2.getPublic()));
-            node3.setPublicKey(EncryptionHelper.keyToString(key3.getPublic()));
+            node1.setPublicKey(EncryptionUtil.keyToString(key1.getPublic()));
+            node2.setPublicKey(EncryptionUtil.keyToString(key2.getPublic()));
+            node3.setPublicKey(EncryptionUtil.keyToString(key3.getPublic()));
             list_nodes_in.add(node1);
         //    list_nodes_in.add(node2);
         //    list_nodes_in.add(node3);

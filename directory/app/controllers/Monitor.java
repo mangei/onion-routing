@@ -10,12 +10,6 @@ import java.util.Set;
 
 import static play.mvc.Results.ok;
 
-/**
- * Created with IntelliJ IDEA.
- * User: thomasrieder
- * Date: 29.10.14
- * Time: 20:30
- */
 public class Monitor {
 
     public static Result index() {
