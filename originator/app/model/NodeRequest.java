@@ -7,7 +7,7 @@ public class NodeRequest {
     @JsonProperty("payload")
     private String payload;
     @JsonProperty("target")
-    private Target target;
+    private Target target = new Target();
     @JsonProperty("service")
     private TargetServiceRequest targetServiceRequest = new TargetServiceRequest();
 
