@@ -220,16 +220,17 @@ public class RequestController extends Controller {
     }
 
     public static List<ChainNode> getChainNodes() {
-        ChainNodesRequest chainNodesRequest = new ChainNodesRequest();
 
         String url = UrlUtil.createHttpUrl(
                 Global.getConfig().getDirectoryConfig().getIp(),
                 Global.getConfig().getDirectoryConfig().getPort(),
                 "chain");
 
+        Logger.debug("Send chain request: " + url);
+
         F.Promise<String> promise = WS.url(url)
                 .setContentType("application/json")
-                .post(Json.toJson(chainNodesRequest))
+                .get()
                 .map(new F.Function<WSResponse, String>() {
                     @Override
                     public String apply(WSResponse wsResponse) throws Throwable {
@@ -239,6 +240,8 @@ public class RequestController extends Controller {
 
         // wait 1000l for response of service
         String result = promise.get(1000l);
+
+        Logger.debug("Chain result: " + result);
 
         ChainNodesResponse chainNodesResponse = Json.fromJson(Json.parse(result), ChainNodesResponse.class);
         return chainNodesResponse.getChainNodes();
