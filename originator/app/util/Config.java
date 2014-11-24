@@ -59,6 +59,7 @@ public class Config {
                 "ip='" + ip + '\'' +
                 ", port='" + port + '\'' +
                 ", directoryConfig=" + directoryConfig +
+                ", quoteConfig=" + quoteConfig +
                 '}';
     }
 
