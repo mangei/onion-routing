@@ -16,7 +16,9 @@ import util.Global;
 import util.UrlUtil;
 import views.html.main;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.util.List;
@@ -115,6 +117,22 @@ public class RequestController extends Controller {
                     e.printStackTrace();
                     Logger.error(e.getMessage());
                     return badRequest();
+                } catch (NoSuchProviderException e) {
+                    e.printStackTrace();
+                    Logger.error(e.getMessage());
+                    return badRequest();
+                } catch (BadPaddingException e) {
+                    e.printStackTrace();
+                    Logger.error(e.getMessage());
+                    return badRequest();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                    Logger.error(e.getMessage());
+                    return badRequest();
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                    Logger.error(e.getMessage());
+                    return badRequest();
                 }
 
             } else {
@@ -140,6 +158,26 @@ public class RequestController extends Controller {
                         Logger.error(e.getMessage());
                         return badRequest();
                     } catch (IllegalBlockSizeException e) {
+                        e.printStackTrace();
+                        Logger.error(e.getMessage());
+                        return badRequest();
+                    } catch (NoSuchProviderException e) {
+                        e.printStackTrace();
+                        Logger.error(e.getMessage());
+                        return badRequest();
+                    } catch (BadPaddingException e) {
+                        e.printStackTrace();
+                        Logger.error(e.getMessage());
+                        return badRequest();
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                        Logger.error(e.getMessage());
+                        return badRequest();
+                    } catch (NoSuchPaddingException e) {
+                        e.printStackTrace();
+                        Logger.error(e.getMessage());
+                        return badRequest();
+                    } catch (IOException e) {
                         e.printStackTrace();
                         Logger.error(e.getMessage());
                         return badRequest();
@@ -183,6 +221,26 @@ public class RequestController extends Controller {
                 Logger.error(e.getMessage());
                 return badRequest();
             } catch (IllegalBlockSizeException e) {
+                e.printStackTrace();
+                Logger.error(e.getMessage());
+                return badRequest();
+            } catch (NoSuchProviderException e) {
+                e.printStackTrace();
+                Logger.error(e.getMessage());
+                return badRequest();
+            } catch (BadPaddingException e) {
+                e.printStackTrace();
+                Logger.error(e.getMessage());
+                return badRequest();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+                Logger.error(e.getMessage());
+                return badRequest();
+            } catch (NoSuchPaddingException e) {
+                e.printStackTrace();
+                Logger.error(e.getMessage());
+                return badRequest();
+            } catch (IOException e) {
                 e.printStackTrace();
                 Logger.error(e.getMessage());
                 return badRequest();

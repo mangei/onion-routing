@@ -15,70 +15,37 @@ import java.util.Arrays;
 
 public class EncryptionUtil {
 
-    public static String encryptMessage(String msg, Key k) throws InvalidKeyException, IllegalBlockSizeException {
-        int start, end;
-        byte[] subarray,test;
-        ByteArrayOutputStream data = new ByteArrayOutputStream();
-        Base64 base64=new Base64();
-        try {
-            byte[] msgbytes = msg.getBytes();
-            Cipher encr = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
-            encr.init(Cipher.ENCRYPT_MODE, k);
-            for (int i = 0; i < msgbytes.length / 245.0; i++) {
-                start = i * 245;
-                end = ((i + 1) * 245) > msgbytes.length ? msgbytes.length : (i + 1) * 245;
-                subarray = Arrays.copyOfRange(msgbytes, start, end);
-                test = encr.doFinal(subarray);
-                data.write(test);
-            }
-            return new String(base64.encode(data.toByteArray()));
-        } catch (BadPaddingException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        } catch (NoSuchAlgorithmException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        } catch (NoSuchPaddingException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        } catch (NoSuchProviderException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        } catch (IOException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        }
+    public static String encryptMessage(String msg, Key k) throws InvalidKeyException, IllegalBlockSizeException, NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, BadPaddingException, IOException {
+        Cipher encr = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
+        encr.init(Cipher.ENCRYPT_MODE, k);
+
+        byte[] encryptedData = encryptionHelper(msg.getBytes(),encr,220);
+        return new String(Base64.encodeBase64(encryptedData));
     }
 
-    public static String decryptMessage(String msg, Key k) throws InvalidKeyException, IllegalBlockSizeException {
-        Base64 base64=new Base64();
-        byte[] decryptedData,encryptedBlock,msgbytes = base64.decode(msg);
-        int start,end;
-        StringBuilder ret = new StringBuilder();
-        try {
-            Cipher decr = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
-            decr.init(Cipher.DECRYPT_MODE, k);
-            for (int i = 0; i < msgbytes.length / 256.0; i++) {
-                start = i * 256;
-                end = ((i + 1) * 256) > msgbytes.length ? msgbytes.length : (i + 1) * 256;
-                encryptedBlock = Arrays.copyOfRange(msgbytes, start, end);
-                decryptedData = (decr.doFinal(encryptedBlock));
-                ret.append(new String(decryptedData));
-            }
-            return ret.toString();
-        } catch (NoSuchPaddingException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        } catch (NoSuchAlgorithmException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        } catch (BadPaddingException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
-        } catch (NoSuchProviderException e) {
-            Logger.info(ExceptionUtils.getStackTrace(e));
-            return null;
+    public static String decryptMessage(String msg, Key k) throws InvalidKeyException, IllegalBlockSizeException, NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, BadPaddingException, IOException {
+        Cipher decr = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
+        decr.init(Cipher.DECRYPT_MODE, k);
+
+        byte[] encryptedData = encryptionHelper(Base64.decodeBase64(msg.getBytes()),decr,256);
+        return new String(encryptedData);
+    }
+
+    private static byte[] encryptionHelper(byte[] msgbytes,Cipher crypt,int blocksize) throws BadPaddingException, IllegalBlockSizeException, IOException {
+        byte[] subarray, encryptedbytes;
+        int start, end;
+        double blockcount = Math.ceil(msgbytes.length / (blocksize*1.0));
+        ByteArrayOutputStream data = new ByteArrayOutputStream();
+
+        for (int i = 0; i < blockcount; i++) {
+            start = i * blocksize;
+            end = Math.min(msgbytes.length, (i + 1) * blocksize);
+            subarray = Arrays.copyOfRange(msgbytes, start, end);
+            encryptedbytes = crypt.doFinal(subarray);
+            data.write(encryptedbytes);
         }
+        return data.toByteArray();
+
     }
 
     public static boolean isPublicKey(String publicKey) {

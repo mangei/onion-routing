@@ -16,9 +16,14 @@ import util.EncryptionUtil;
 import util.Global;
 import util.UrlUtil;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 
 public class RequestController extends Controller {
 
@@ -40,7 +45,7 @@ public class RequestController extends Controller {
             try {
                 decryptedPayload = decryptPayload(encryptedNodeRequest.getPayload());
                 Logger.debug("decrypted payload: " + decryptedPayload);
-            } catch (IllegalBlockSizeException | InvalidKeyException e) {
+            } catch (IOException | BadPaddingException | NoSuchProviderException | NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidKeyException e) {
                 Logger.debug("Could not decrypt message");
                 return badRequest("Could not decrypt message");
             }
@@ -56,7 +61,7 @@ public class RequestController extends Controller {
             } else {
                 try {
                     return processServiceRequest(nodeRequest);
-                } catch (IllegalBlockSizeException | InvalidKeyException e) {
+                } catch (IOException | BadPaddingException | NoSuchProviderException | NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidKeyException e) {
                     Logger.debug("Could not encrypt message with originator's key");
                     return badRequest("Could not encrypt message with originator's key");
                 }
@@ -64,7 +69,7 @@ public class RequestController extends Controller {
         }
     }
 
-    private static String decryptPayload(String payload) throws IllegalBlockSizeException, InvalidKeyException {
+    private static String decryptPayload(String payload) throws IllegalBlockSizeException, InvalidKeyException, NoSuchProviderException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
         Key key = EncryptionUtil.stringToKey(Global.getKeyManager().getPrivateKey());
         payload = EncryptionUtil.decryptMessage(payload, key);
         return payload;
@@ -95,7 +100,7 @@ public class RequestController extends Controller {
         return ok(result);
     }
 
-    private static Result processServiceRequest(NodeRequest nodeRequest) throws IllegalBlockSizeException, InvalidKeyException {
+    private static Result processServiceRequest(NodeRequest nodeRequest) throws IllegalBlockSizeException, InvalidKeyException, NoSuchProviderException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
         Logger.info("Request the target service");
         TargetServiceRequest targetServiceRequest = nodeRequest.getTargetServiceRequest();
         TargetServiceHandler targetServiceHandler = new TargetServiceHandler(targetServiceRequest);
