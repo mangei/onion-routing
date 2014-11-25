@@ -15,4 +15,10 @@ public class EncryptedNodeRequest {
         this.payload = payload;
     }
 
+    @Override
+    public String toString() {
+        return "EncryptedNodeRequest{" +
+                "payload='" + payload + '\'' +
+                '}';
+    }
 }

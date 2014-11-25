@@ -1,7 +1,5 @@
 package controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import model.*;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -21,7 +19,6 @@ import views.html.main;
 import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class RequestController extends Controller {
@@ -78,8 +75,11 @@ public class RequestController extends Controller {
         // encrypt messages
         for (int i = 0, j = nodes.size() - 1; i < nodes_pubKey_reverse.length; i++) {
 
-            Key k = nodes_pubKey_reverse[i];
-            ChainNode node = nodes.get(j - i);
+            int currentChainNodeIdx = j - i;
+            Logger.debug("currentChainNodeIdx: " + currentChainNodeIdx);
+
+            Key key = nodes_pubKey_reverse[i];
+            ChainNode node = nodes.get(currentChainNodeIdx);
             ObjectMapper mapper = new ObjectMapper();
 
             if (i == 0) {
@@ -87,7 +87,9 @@ public class RequestController extends Controller {
                 // encryption result is payload in next message
 
                 try {
+                    NodeRequest nodeRequest = new NodeRequest();
                     TargetServiceRequest targetServiceRequest = new TargetServiceRequest();
+                    nodeRequest.setTargetServiceRequest(targetServiceRequest);
 
                     String url = UrlUtil.createHttpUrl(
                             Global.getConfig().getQuoteConfig().getIp(),
@@ -97,7 +99,10 @@ public class RequestController extends Controller {
                     targetServiceRequest.setMethod("GET");
                     targetServiceRequest.setOriginatorPubKey(EncryptionUtil.keyToString(originator_key.getPublic()));
 
-                    payload = EncryptionUtil.encryptMessage(mapper.writeValueAsString(targetServiceRequest), k);
+                    Logger.debug("target nodeRequest: " + nodeRequest);
+                    payload = EncryptionUtil.encryptMessage(Json.stringify(Json.toJson(nodeRequest)), key);
+                    Logger.debug("target encrypted payload: " + payload);
+
                 } catch (InvalidKeyException e) {
                     e.printStackTrace();
                     Logger.error(e.getMessage());
@@ -121,12 +126,14 @@ public class RequestController extends Controller {
 
                     NodeRequest nodeRequest = new NodeRequest();
                     nodeRequest.setPayload(payload);
+                    nodeRequest.setTarget(new NodeRequest.Target());
                     nodeRequest.getTarget().setIp(node.getIp());
-                    nodeRequest.getTarget().setPort(""+node.getPort());
+                    nodeRequest.getTarget().setPort("" + node.getPort());
 
                     try {
-
-                        payload = EncryptionUtil.encryptMessage(mapper.writeValueAsString(nodeRequest), k);
+                        Logger.debug("nodeRequest: " + nodeRequest);
+                        payload = EncryptionUtil.encryptMessage(Json.stringify(Json.toJson(nodeRequest)), key);
+                        Logger.debug("encrypted nodeRequest payload: " + payload);
 
                     } catch (InvalidKeyException e) {
                         e.printStackTrace();
@@ -135,10 +142,6 @@ public class RequestController extends Controller {
                     } catch (IllegalBlockSizeException e) {
                         e.printStackTrace();
                         Logger.error(e.getMessage());
-                        return badRequest();
-                    } catch (JsonProcessingException e1) {
-                        e1.printStackTrace();
-                        Logger.error(e1.getMessage());
                         return badRequest();
                     }
                 }
@@ -151,15 +154,15 @@ public class RequestController extends Controller {
 
         } else {
             ChainNode entryNode = nodes.get(0);
-            EncryptedNodeRequest sendMessage = new EncryptedNodeRequest();
-            sendMessage.setPayload(payload);
-            JsonNode sendJson = Json.toJson(sendMessage);
+            EncryptedNodeRequest encryptedNodeRequest = new EncryptedNodeRequest();
+            encryptedNodeRequest.setPayload(payload);
 
-            Logger.debug("send message to entryNode: " + entryNode);
+            Logger.debug("entryNode: " + entryNode);
+            Logger.debug("send message to entryNode: " + encryptedNodeRequest);
 
             F.Promise<String> promise = WS.url(getUri(entryNode.getIp(), entryNode.getPort()))
                     .setContentType("application/json")
-                    .post(sendJson)
+                    .post(Json.toJson(encryptedNodeRequest))
                     .map(new F.Function<WSResponse, String>() {
                         @Override
                         public String apply(WSResponse wsResponse) throws Throwable {

@@ -12,7 +12,6 @@ import play.libs.ws.WS;
 import play.libs.ws.WSResponse;
 import play.mvc.Controller;
 import play.mvc.Result;
-import util.EncodingUtil;
 import util.EncryptionUtil;
 import util.Global;
 import util.UrlUtil;
@@ -36,10 +35,11 @@ public class RequestController extends Controller {
              * Decrypt request
              */
             EncryptedNodeRequest encryptedNodeRequest = Json.fromJson(json, EncryptedNodeRequest.class);
-            String encryptedPayload = EncodingUtil.decodeMessage(encryptedNodeRequest.getPayload());
+            Logger.debug("encrypted node request: " + encryptedNodeRequest);
             String decryptedPayload;
             try {
-                decryptedPayload = decryptPayload(encryptedPayload);
+                decryptedPayload = decryptPayload(encryptedNodeRequest.getPayload());
+                Logger.debug("decrypted payload: " + decryptedPayload);
             } catch (IllegalBlockSizeException | InvalidKeyException e) {
                 Logger.debug("Could not decrypt message");
                 return badRequest("Could not decrypt message");
@@ -49,7 +49,7 @@ public class RequestController extends Controller {
              * Process request
              */
             NodeRequest nodeRequest = Json.fromJson(Json.parse(decryptedPayload), NodeRequest.class);
-            Logger.info(nodeRequest.toString());
+            Logger.info("node request: " + nodeRequest);
 
             if (!isExitNode(nodeRequest)) {
                 return processNextNode(nodeRequest);
