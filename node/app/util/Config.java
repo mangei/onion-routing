@@ -13,7 +13,7 @@ public class Config {
         Configuration configuration = Play.application().configuration();
         setIp(configuration.getString("http.address"));
         setPort(configuration.getInt("http.port"));
-        getDirectoryConfig().setIp(configuration.getString("directory.http.port"));
+        getDirectoryConfig().setIp(configuration.getString("directory.http.address"));
         getDirectoryConfig().setPort(configuration.getInt("directory.http.port"));
         Logger.info("Configuration: " + toString());
     }

@@ -16,8 +16,8 @@ import java.util.TimerTask;
 public class Global extends GlobalSettings {
 
     private final static long REQUEST_WAITING_TIME = 10000;
-    private final static String ADDRESS_DIRECTORY_NODE = "127.0.0.1";
-    private final static String PORT_DIRECTORY_NODE = "9005";
+    private static String ADDRESS_DIRECTORY_NODE;
+    private static Integer PORT_DIRECTORY_NODE;
     private final static int HEARTBEAT_PERIOD = 5000;
 
     private static KeyManager keyManager;
@@ -30,6 +30,9 @@ public class Global extends GlobalSettings {
         // init configuration
         config = new Config();
         Logger.info("Configuration loaded!");
+
+        ADDRESS_DIRECTORY_NODE = config.getDirectoryConfig().getIp();
+        PORT_DIRECTORY_NODE = config.getDirectoryConfig().getPort();
 
         // init key manager
         keyManager = new KeyManager();
