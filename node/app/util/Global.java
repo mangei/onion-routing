@@ -81,17 +81,27 @@ public class Global extends GlobalSettings {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                Logger.debug("Sending heartbeat...");
-                F.Promise<String> promise = WS.url(UrlUtil.createHttpUrl(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "heartbeat"))
-                        .setContentType("application/json")
-                        .put(Json.toJson(heartbeatRequest))
-                        .map(new F.Function<WSResponse, String>() {
-                            @Override
-                            public String apply(WSResponse wsResponse) throws Throwable {
-                                return wsResponse.getBody();
-                            }
-                        });
-                Logger.debug("Heartbeat response: " + promise.get(REQUEST_WAITING_TIME));
+                try {
+                    F.Promise<String> promise = WS.url(UrlUtil.createHttpUrl(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "heartbeat"))
+                            .setContentType("application/json")
+                            .put(Json.toJson(heartbeatRequest))
+                            .map(new F.Function<WSResponse, String>() {
+                                @Override
+                                public String apply(WSResponse wsResponse) throws Throwable {
+                                    return wsResponse.getBody();
+                                }
+                            });
+
+                    String response = promise.get(REQUEST_WAITING_TIME);
+
+                    // TODO ghetto - proper error handling needed - reregister?
+                    if ("{\"error\":\"invalid request\"}".equals(response)) {
+                        Logger.debug("Got a response that the heartbeat is invalid");
+                    }
+
+                } catch (Exception e) {
+                    Logger.debug("Something failed with the heartbeat, retrying...");
+                }
             }
         }, HEARTBEAT_PERIOD, HEARTBEAT_PERIOD);
     }
