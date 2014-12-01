@@ -31,21 +31,22 @@ public class RequestController extends Controller {
 
     // curl --header "Content-type: application/json" --request POST --data-binary @data.json http://localhost:9000/request
     public static Result requestMessage() {
-        Logger.info("Process a new request");
+        Logger.info("Processing a new request");
         JsonNode json = request().body().asJson();
         if (json == null) {
+            Logger.error("Expected JSON data");
             return badRequest("Expecting Json data");
         } else {
             /*
              * Decrypt request
              */
             EncryptedNodeRequest encryptedNodeRequest = Json.fromJson(json, EncryptedNodeRequest.class);
-            Logger.debug("encrypted node request: " + encryptedNodeRequest);
             String decryptedPayload;
             try {
                 decryptedPayload = decryptPayload(encryptedNodeRequest.getPayload());
-                Logger.debug("decrypted payload: " + decryptedPayload);
+                Logger.debug("successfully decrypted the payload");
             } catch (IOException | BadPaddingException | NoSuchProviderException | NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidKeyException e) {
+                e.printStackTrace();
                 Logger.debug("Could not decrypt message");
                 return badRequest("Could not decrypt message");
             }
@@ -54,12 +55,14 @@ public class RequestController extends Controller {
              * Process request
              */
             NodeRequest nodeRequest = Json.fromJson(Json.parse(decryptedPayload), NodeRequest.class);
-            Logger.info("node request: " + nodeRequest);
+            Logger.info("node request: ");
 
             if (!isExitNode(nodeRequest)) {
+                Logger.info("Not the exit node, forwarding request");
                 return processNextNode(nodeRequest);
             } else {
                 try {
+                    Logger.info("Exit node; Requesting external service");
                     return processServiceRequest(nodeRequest);
                 } catch (IOException | BadPaddingException | NoSuchProviderException | NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidKeyException e) {
                     Logger.debug("Could not encrypt message with originator's key");
@@ -76,7 +79,7 @@ public class RequestController extends Controller {
     }
 
     private static Result processNextNode(NodeRequest nodeRequest) {
-        Logger.info("Request next node");
+        Logger.info("Request next node in the chain");
         EncryptedNodeRequest encryptedNodeRequest = new EncryptedNodeRequest();
         encryptedNodeRequest.setPayload(nodeRequest.getPayload());
 
@@ -84,6 +87,8 @@ public class RequestController extends Controller {
                 nodeRequest.getTarget().getIp(),
                 nodeRequest.getTarget().getPort(),
                 "request");
+
+        Logger.debug("The next target is: " + nextNodeUrl);
 
         F.Promise<String> promise = WS.url(nextNodeUrl)
                 .setContentType("application/json")
@@ -96,7 +101,7 @@ public class RequestController extends Controller {
                 });
 
         String result = promise.get(REQUEST_WAITING_TIME);
-        Logger.info("Got message: " + result);
+        Logger.info("Got response, forwarding");
         return ok(result);
     }
 
