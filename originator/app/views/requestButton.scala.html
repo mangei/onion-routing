@@ -1,12 +1,19 @@
 @(title: String)
+    @main("Originator - Test Requests") {
+        <div class="page-header">
+            <h1>Onion Routing Test</h1>
+        </div>
+        <p>This site does the following:</p>
+        <ul>
+            <li>Get a new chain from the originator</li>
+            <li>Encrypt the request 3 times</li>
+            <li>The target of the request is the Quote service</li>
+            <li>Send the request to the entry node</li>
+            <li>Wait for a response</li>
+        </ul>
 
-<!DOCTYPE html>
-<html>
-<head lang="en">
-  <meta charset="UTF-8">
-  <title>@title</title>
-</head>
-<body>
-<form action="/request" method="post"><button type="submit">Push me</button></form>
-</body>
-</html>
+        <button id="send-btn" type="submit" class="btn btn-primary">Get new Quote</button>
+
+        <h3>Received Quotes</h3>
+        <ul id="quote-list" class="list-unstyled"></ul>
+    }
