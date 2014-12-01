@@ -1,7 +1,15 @@
 @(message: String)
 
-@main("Welcome to Play") {
-
-    @play20.welcome(message, style = "Java")
-
+@main("Directory Node - Index") {
+    <div class="page-header">
+        <h1>Directory Node</h1>
+    </div>
+    <div>
+        <h3>Available resources:</h3>
+        <ul>
+            <li><a href="monitor">/monitor</a> - Displays an overview of all registered nodes</li>
+            <li><a href="nodes">/nodes</a> - Get the node information</li>
+            <li><a href="chain">/chain</a> - Get a chain</li>
+        </ul>
+    </div>
 }
