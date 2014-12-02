@@ -1,6 +1,5 @@
 package controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import model.*;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import play.Logger;
@@ -16,12 +15,13 @@ import util.Global;
 import util.UrlUtil;
 import views.html.main;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class RequestController extends Controller {
 
@@ -29,164 +29,83 @@ public class RequestController extends Controller {
 
         List<ChainNode> nodes = getChainNodes();
 
-        if (nodes == null) {
-            return internalServerError("creating test chain node failed");
+        if (nodes == null || nodes.size() != 3) {
+            return internalServerError("creating node chain failed");
         }
-
-        // TODO: request chainnode from directory
 
         // !------ actual originator starts here
 
-        KeyPair originator_key = null;
-        String decryptServiceResponse = null;
+        // Create our own public key pair
+        KeyPair originatorKey = null;
         try {
-            originator_key = EncryptionUtil.getRSAKeyPair();
-
-        } catch (NoSuchAlgorithmException e1) {
-            e1.printStackTrace();
-            Logger.error(e1.getMessage());
-            return internalServerError("error - creating rsa key pair");
-        } catch (NoSuchProviderException e1) {
-            e1.printStackTrace();
-            Logger.error(e1.getMessage());
-            return internalServerError("error - creating rsa key pair");
+            originatorKey = EncryptionUtil.getRSAKeyPair();
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+            Logger.error(e.getMessage());
+            return internalServerError("error - creating rsa key pair for originator");
         }
 
-        // check valid ip, valid port, valid public key of all 3 nodes
-        // create public key array of chain nodes in reverse order
-        Key[] nodes_pubKey_reverse = new Key[nodes.size()];
-
-        boolean invalidNode = false;
-        for (int i = 0, j = nodes_pubKey_reverse.length - 1; i < nodes.size(); i++) {
-            ChainNode n = nodes.get(i);
-            if (!validateNode(n)) {
-                Logger.info("validating nodes failed");
+        // Validate all the nodes received as the chain
+        for (ChainNode node : nodes) {
+            if (!validateNode(node)) {
+                Logger.info("Node validation failed");
                 return badRequest();
-            } else {
-                // save pub key in array - reverse order
-                nodes_pubKey_reverse[j - i] = EncryptionUtil.stringToKey(n.getPublicKey());
             }
         }
 
         // since all chain nodes are valid nodes, encrypt the single messages for all nodes
-        // in reverse order - according to public key array
+        // in reverse order
         String payload = "";
 
-        Logger.info("all test nodes are valid and reversed");
-
         // encrypt messages
-        for (int i = 0, j = nodes.size() - 1; i < nodes_pubKey_reverse.length; i++) {
+        try {
+            for (int i = nodes.size() - 1; i >= 0; i--) {
+                Logger.debug("Encrypting for number " + i);
 
-            int currentChainNodeIdx = j - i;
-            Logger.debug("currentChainNodeIdx: " + currentChainNodeIdx);
+                ChainNode node = nodes.get(i);
+                Key nodeKey = EncryptionUtil.stringToKey(nodes.get(i).getPublicKey());
+                NodeRequest nodeRequest = new NodeRequest();
 
-            Key key = nodes_pubKey_reverse[i];
-            ChainNode node = nodes.get(currentChainNodeIdx);
-            ObjectMapper mapper = new ObjectMapper();
-
-            if (i == 0) {
-                // encrypt TargetServiceRequest with public key of exit node
-                // encryption result is payload in next message
-
-                try {
-                    NodeRequest nodeRequest = new NodeRequest();
+                if (i == nodes.size() - 1) {
+                    // we are encrypting a request for the last node in the chain - this happens first
                     TargetServiceRequest targetServiceRequest = new TargetServiceRequest();
-                    nodeRequest.setTargetServiceRequest(targetServiceRequest);
 
+                    // TODO this needs to be changed to allow arbitrary requests
                     String url = UrlUtil.createHttpUrl(
                             Global.getConfig().getQuoteConfig().getIp(),
                             Global.getConfig().getQuoteConfig().getPort(),
                             "quote");
                     targetServiceRequest.setUrl(url);
                     targetServiceRequest.setMethod("GET");
-                    targetServiceRequest.setOriginatorPubKey(EncryptionUtil.keyToString(originator_key.getPublic()));
+                    targetServiceRequest.setOriginatorPubKey(EncryptionUtil.keyToString(originatorKey.getPublic()));
 
-                    Logger.debug("target nodeRequest: " + nodeRequest);
-                    payload = EncryptionUtil.encryptMessage(Json.stringify(Json.toJson(nodeRequest)), key);
-                    Logger.debug("target encrypted payload: " + payload);
+                    nodeRequest.setTargetServiceRequest(targetServiceRequest);
 
-                } catch (InvalidKeyException e) {
-                    e.printStackTrace();
-                    Logger.error(e.getMessage());
-                    return badRequest();
-                } catch (IllegalBlockSizeException e) {
-                    Logger.error(e.getMessage());
-                    e.printStackTrace();
-                    return badRequest();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Logger.error(e.getMessage());
-                    return badRequest();
-                } catch (NoSuchProviderException e) {
-                    e.printStackTrace();
-                    Logger.error(e.getMessage());
-                    return badRequest();
-                } catch (BadPaddingException e) {
-                    e.printStackTrace();
-                    Logger.error(e.getMessage());
-                    return badRequest();
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                    Logger.error(e.getMessage());
-                    return badRequest();
-                } catch (NoSuchPaddingException e) {
-                    e.printStackTrace();
-                    Logger.error(e.getMessage());
-                    return badRequest();
-                }
+                    Logger.debug("Encrypted for the last node in the chain: " + node.getIp() + ":" + node.getPort());
 
-            } else {
-                // Other Nodes
-
-                if (payload == null || payload.isEmpty()) {
-                    return badRequest();
                 } else {
 
-                    NodeRequest nodeRequest = new NodeRequest();
+                    ChainNode nextNode = nodes.get(i + 1);
+
                     nodeRequest.setPayload(payload);
                     nodeRequest.setTarget(new NodeRequest.Target());
-                    nodeRequest.getTarget().setIp(node.getIp());
-                    nodeRequest.getTarget().setPort("" + node.getPort());
+                    nodeRequest.getTarget().setIp(nextNode.getIp());
+                    nodeRequest.getTarget().setPort("" + nextNode.getPort());
 
-                    try {
-                        Logger.debug("nodeRequest: " + nodeRequest);
-                        payload = EncryptionUtil.encryptMessage(Json.stringify(Json.toJson(nodeRequest)), key);
-                        Logger.debug("encrypted nodeRequest payload: " + payload);
-
-                    } catch (InvalidKeyException e) {
-                        e.printStackTrace();
-                        Logger.error(e.getMessage());
-                        return badRequest();
-                    } catch (IllegalBlockSizeException e) {
-                        e.printStackTrace();
-                        Logger.error(e.getMessage());
-                        return badRequest();
-                    } catch (NoSuchProviderException e) {
-                        e.printStackTrace();
-                        Logger.error(e.getMessage());
-                        return badRequest();
-                    } catch (BadPaddingException e) {
-                        e.printStackTrace();
-                        Logger.error(e.getMessage());
-                        return badRequest();
-                    } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
-                        Logger.error(e.getMessage());
-                        return badRequest();
-                    } catch (NoSuchPaddingException e) {
-                        e.printStackTrace();
-                        Logger.error(e.getMessage());
-                        return badRequest();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Logger.error(e.getMessage());
-                        return badRequest();
-                    }
+                    Logger.debug("Encrypted for node " + node.getIp() + ":" + node.getPort());
                 }
+
+                // encrypt the playload
+                payload = EncryptionUtil.encryptMessage(Json.stringify(Json.toJson(nodeRequest)), nodeKey);
             }
+        } catch (GeneralSecurityException | IOException e) {
+            e.printStackTrace();
+            Logger.error(e.getMessage());
+            return badRequest();
         }
 
-        // all message are encrypted - payload has to be send to first node
+
+        // all message are encrypted - payload has to be sent to first node
         if (payload == null || payload.isEmpty()) {
             return badRequest();
 
@@ -195,8 +114,7 @@ public class RequestController extends Controller {
             EncryptedNodeRequest encryptedNodeRequest = new EncryptedNodeRequest();
             encryptedNodeRequest.setPayload(payload);
 
-            Logger.debug("entryNode: " + entryNode);
-            Logger.debug("send message to entryNode: " + encryptedNodeRequest);
+            Logger.debug("the entry node is  " + entryNode.getIp() + ":" + entryNode.getPort());
 
             F.Promise<String> promise = WS.url(getUri(entryNode.getIp(), entryNode.getPort()))
                     .setContentType("application/json")
@@ -208,46 +126,34 @@ public class RequestController extends Controller {
                         }
                     });
 
-            // wait 1000l for response of service
-            String result = promise.get(1000l);
+            // wait 2000L for response of service
+            String result = promise.get(2000L);
 
             // decrypt response with originator_private_key
-
             try {
-                Logger.debug("response from service: " + result);
-                decryptServiceResponse = EncryptionUtil.decryptMessage(result, originator_key.getPrivate());
-            } catch (InvalidKeyException e) {
+                Logger.debug("received an encrypted response from the service");
+                String decryptServiceResponse = EncryptionUtil.decryptMessage(result, originatorKey.getPrivate());
+                Logger.debug("the response is " + decryptServiceResponse);
+
+                // build the request respones for prettier output
+                Set<String> usedNodeURIs = new HashSet<String>();
+                for (ChainNode node : nodes) {
+                    usedNodeURIs.add(node.getIp() + ":" + node.getPort());
+                }
+
+                RequestResponse requestResponse = new RequestResponse();
+                requestResponse.setResponsePayload(decryptServiceResponse);
+                requestResponse.setUsedChainNodes(usedNodeURIs);
+
+                return ok(Json.toJson(requestResponse));
+
+            } catch (GeneralSecurityException | IOException e) {
                 e.printStackTrace();
-                Logger.error(e.getMessage());
-                return badRequest();
-            } catch (IllegalBlockSizeException e) {
-                e.printStackTrace();
-                Logger.error(e.getMessage());
-                return badRequest();
-            } catch (NoSuchProviderException e) {
-                e.printStackTrace();
-                Logger.error(e.getMessage());
-                return badRequest();
-            } catch (BadPaddingException e) {
-                e.printStackTrace();
-                Logger.error(e.getMessage());
-                return badRequest();
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-                Logger.error(e.getMessage());
-                return badRequest();
-            } catch (NoSuchPaddingException e) {
-                e.printStackTrace();
-                Logger.error(e.getMessage());
-                return badRequest();
-            } catch (IOException e) {
-                e.printStackTrace();
+                Logger.error("decryption failed");
                 Logger.error(e.getMessage());
                 return badRequest();
             }
         }
-
-        return ok(main.render("request message", Html.apply("<div>" + decryptServiceResponse + " </div>")));
     }
 
     private static String getUri(String ip, Integer port) {
@@ -287,7 +193,7 @@ public class RequestController extends Controller {
                 Global.getConfig().getDirectoryConfig().getPort(),
                 "chain");
 
-        Logger.debug("Send chain request: " + url);
+        Logger.debug("Sending chain node request");
 
         F.Promise<String> promise = WS.url(url)
                 .setContentType("application/json")
@@ -302,10 +208,16 @@ public class RequestController extends Controller {
         // wait 1000l for response of service
         String result = promise.get(1000l);
 
-        Logger.debug("Chain result: " + result);
+        Logger.debug("Successfully received chain");
 
-        ChainNodesResponse chainNodesResponse = Json.fromJson(Json.parse(result), ChainNodesResponse.class);
+        ChainNodesResponse chainNodesResponse;
+        try {
+            chainNodesResponse = Json.fromJson(Json.parse(result), ChainNodesResponse.class);
+        } catch (Exception e) {
+            // some stupid runtime exception of jackson
+            return null;
+        }
+
         return chainNodesResponse.getChainNodes();
     }
-
 }
