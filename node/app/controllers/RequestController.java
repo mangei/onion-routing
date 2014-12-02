@@ -30,12 +30,13 @@ public class RequestController extends Controller {
     private static long REQUEST_WAITING_TIME = 10000;
 
     // curl --header "Content-type: application/json" --request POST --data-binary @data.json http://localhost:9000/request
-    public static Result requestMessage() {
+    public static F.Promise<Result> requestMessage() {
         Logger.info("Processing a new request");
         JsonNode json = request().body().asJson();
         if (json == null) {
             Logger.error("Expected JSON data");
-            return badRequest("Expecting Json data");
+            Result res = badRequest("Expecting Json data");
+            return F.Promise.pure(res);
         } else {
             /*
              * Decrypt request
@@ -48,7 +49,8 @@ public class RequestController extends Controller {
             } catch (IOException | BadPaddingException | NoSuchProviderException | NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidKeyException e) {
                 e.printStackTrace();
                 Logger.debug("Could not decrypt message");
-                return badRequest("Could not decrypt message");
+                Result res = badRequest("Could not decrypt message");
+                return F.Promise.pure(res);
             }
 
             /*
@@ -66,7 +68,8 @@ public class RequestController extends Controller {
                     return processServiceRequest(nodeRequest);
                 } catch (IOException | BadPaddingException | NoSuchProviderException | NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidKeyException e) {
                     Logger.debug("Could not encrypt message with originator's key");
-                    return badRequest("Could not encrypt message with originator's key");
+                    Result res = badRequest("Could not encrypt message with originator's key");
+                    return F.Promise.pure(res);
                 }
             }
         }
@@ -78,7 +81,7 @@ public class RequestController extends Controller {
         return payload;
     }
 
-    private static Result processNextNode(NodeRequest nodeRequest) {
+    private static F.Promise<Result> processNextNode(NodeRequest nodeRequest) {
         Logger.info("Request next node in the chain");
         EncryptedNodeRequest encryptedNodeRequest = new EncryptedNodeRequest();
         encryptedNodeRequest.setPayload(nodeRequest.getPayload());
@@ -90,36 +93,41 @@ public class RequestController extends Controller {
 
         Logger.debug("The next target is: " + nextNodeUrl);
 
-        F.Promise<String> promise = WS.url(nextNodeUrl)
+        F.Promise<WSResponse> promise = WS.url(nextNodeUrl)
                 .setContentType("application/json")
-                .post(Json.toJson(encryptedNodeRequest))
-                .map(new F.Function<WSResponse, String>() {
-                    @Override
-                    public String apply(WSResponse wsResponse) throws Throwable {
-                        return wsResponse.getBody();
-                    }
-                });
+                .post(Json.toJson(encryptedNodeRequest));
 
-        String result = promise.get(REQUEST_WAITING_TIME);
-        Logger.info("Got response, forwarding");
-        return ok(result);
+        return promise.map(new F.Function<WSResponse, Result>() {
+            @Override
+            public Result apply(WSResponse wsResponse) throws Throwable {
+                Logger.info("Got response, forwarding");
+                return ok(wsResponse.getBody());
+            }
+        });
     }
 
-    private static Result processServiceRequest(NodeRequest nodeRequest) throws IllegalBlockSizeException, InvalidKeyException, NoSuchProviderException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+    private static F.Promise<Result> processServiceRequest(NodeRequest nodeRequest) throws IllegalBlockSizeException, InvalidKeyException, NoSuchProviderException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
         Logger.info("Request the target service");
-        TargetServiceRequest targetServiceRequest = nodeRequest.getTargetServiceRequest();
+        final TargetServiceRequest targetServiceRequest = nodeRequest.getTargetServiceRequest();
         TargetServiceHandler targetServiceHandler = new TargetServiceHandler(targetServiceRequest);
-        String response = targetServiceHandler.callService();
+        F.Promise<String> response = targetServiceHandler.callService();
 
-        String originatorPubKey = targetServiceRequest.getOriginatorPubKey();
-        Key key = EncryptionUtil.stringToKey(originatorPubKey);
-        String encryptedResponse = EncryptionUtil.encryptMessage(response, key);
+        return response.map(new F.Function<String, Result>() {
+            @Override
+            public Result apply(String s) throws Throwable {
+                String originatorPubKey = targetServiceRequest.getOriginatorPubKey();
+                Key key = EncryptionUtil.stringToKey(originatorPubKey);
+                String encryptedResponse = EncryptionUtil.encryptMessage(s, key);
+                return ok(encryptedResponse);
+            }
+        });
 
-        return ok(encryptedResponse);
     }
 
     private static boolean isExitNode(NodeRequest nodeRequest) {
         return nodeRequest.getTargetServiceRequest() != null;
     }
+
+    
 
 }
