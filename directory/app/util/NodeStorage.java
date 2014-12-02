@@ -73,7 +73,7 @@ public class NodeStorage {
         return heartbeatMap;
     }
 
-    public static void updateHeartbeatForNode(String secret) {
+    public static void updateHeartbeatForNode(String secret) throws UnknownNodeException {
         ChainNode secretNode = null;
 
         for (ChainNode node : nodeSet) {
@@ -85,7 +85,8 @@ public class NodeStorage {
         if (secretNode != null) {
             heartbeatMap.put(secretNode, System.currentTimeMillis());
         } else {
-            Logger.info("node for heartbeat not found");
+            Logger.debug("node for heartbeat not found");
+            throw new UnknownNodeException();
         }
 
     }

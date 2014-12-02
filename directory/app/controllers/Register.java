@@ -8,9 +8,11 @@ import play.mvc.BodyParser;
 import play.mvc.Result;
 import util.DirectoryUtil;
 import util.NodeStorage;
+import util.UnknownNodeException;
 
 import static play.mvc.Controller.request;
 import static play.mvc.Results.badRequest;
+import static play.mvc.Results.internalServerError;
 import static play.mvc.Results.ok;
 
 public class Register {
@@ -61,13 +63,19 @@ public class Register {
     @BodyParser.Of(BodyParser.Json.class)
     public static Result heartbeat() {
         JsonNode json = request().body().asJson();
-        if (json != null) {
-            HeartbeatRequest heartbeatRequest= Json.fromJson(json, HeartbeatRequest.class);
-            String secret = heartbeatRequest.getSecret();
-            NodeStorage.updateHeartbeatForNode(secret);
-            return ok();
-        } else {
-            return badRequest(Json.toJson(new ErrorResponse("invalid request json")));
+        try {
+            if (json != null) {
+                HeartbeatRequest heartbeatRequest = Json.fromJson(json, HeartbeatRequest.class);
+                String secret = heartbeatRequest.getSecret();
+                NodeStorage.updateHeartbeatForNode(secret);
+                return ok();
+            }
+        } catch (UnknownNodeException e) {
+            Logger.error("Unknown node for heartbeat");
+            Logger.error(e.getMessage());
+            e.printStackTrace();
+            return badRequest(Json.toJson(new ErrorResponse("invalid request")));
         }
+        return internalServerError();
     }
 }
