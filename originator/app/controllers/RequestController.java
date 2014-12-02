@@ -25,6 +25,8 @@ import java.util.Set;
 
 public class RequestController extends Controller {
 
+    private static long REQUEST_WAITING_TIME = 10000;
+
     public static Result requestMessage() {
 
         List<ChainNode> nodes = getChainNodes();
@@ -126,8 +128,8 @@ public class RequestController extends Controller {
                         }
                     });
 
-            // wait 2000L for response of service
-            String result = promise.get(2000L);
+            // wait for response of service
+            String result = promise.get(REQUEST_WAITING_TIME);
 
             // decrypt response with originator_private_key
             try {
@@ -205,8 +207,8 @@ public class RequestController extends Controller {
                     }
                 });
 
-        // wait 1000l for response of service
-        String result = promise.get(1000l);
+        // wait for response of service
+        String result = promise.get(REQUEST_WAITING_TIME);
 
         Logger.debug("Successfully received chain");
 

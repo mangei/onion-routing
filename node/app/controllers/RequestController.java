@@ -27,7 +27,7 @@ import java.security.NoSuchProviderException;
 
 public class RequestController extends Controller {
 
-    private static long REQUEST_WAITING_TIME = 1000;
+    private static long REQUEST_WAITING_TIME = 10000;
 
     // curl --header "Content-type: application/json" --request POST --data-binary @data.json http://localhost:9000/request
     public static Result requestMessage() {
