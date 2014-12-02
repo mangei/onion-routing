@@ -77,7 +77,11 @@ public class Chain {
     }
 
     private static boolean isNodeAlive(ChainNode node) {
-        long diff = Calendar.getInstance().getTimeInMillis() - NodeStorage.getLastHeartbeatForNode(node);
-        return diff / 1000 < timeout;
+        if (NodeStorage.getLastHeartbeatForNode(node) != null) {
+            long diff = Calendar.getInstance().getTimeInMillis() - NodeStorage.getLastHeartbeatForNode(node);
+            return diff / 1000 < timeout;
+        } else {
+            return false;
+        }
     }
 }
