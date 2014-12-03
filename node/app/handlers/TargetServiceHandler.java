@@ -15,7 +15,7 @@ public class TargetServiceHandler {
         this.targetServiceRequest = targetServiceRequest;
     }
 
-    public String callService() {
+    public F.Promise<String> callService() {
         String url = targetServiceRequest.getUrl();
         String method = targetServiceRequest.getMethod();
 
@@ -30,9 +30,9 @@ public class TargetServiceHandler {
                             return wsResponse.getBody();
                         }
                     });
-            return promise.get(REQUEST_WAITING_TIME);
+            return promise;
         } else {
-            return "Hello!";
+            return F.Promise.pure("Hello");
         }
     }
 }

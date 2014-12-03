@@ -40,40 +40,43 @@ public class Global extends GlobalSettings {
 
         Logger.info("Register node...");
         // register node
-        RegisterResponse registerResponse = registerNode();
-        String secret = registerResponse.getSecret();
+        F.Promise<RegisterResponse> registerResponse = registerNode();
+        registerResponse.onRedeem(new F.Callback<RegisterResponse>() {
+            @Override
+            public void invoke(RegisterResponse registerResponse) throws Throwable {
+                String secret = registerResponse.getSecret();
 
-        Logger.info("Node registered!");
-        Logger.info("Received secret: " + secret);
+                Logger.info("Node registered!");
+                Logger.info("Received secret: " + secret);
 
-        // start heartbeat
-        HeartbeatRequest heartbeatRequest = new HeartbeatRequest();
-        heartbeatRequest.setSecret(secret);
-        startHeartbeat(heartbeatRequest);
+                // start heartbeat
+                HeartbeatRequest heartbeatRequest = new HeartbeatRequest();
+                heartbeatRequest.setSecret(secret);
+                startHeartbeat(heartbeatRequest);
 
-        Logger.info("Application has started");
+                Logger.info("Application has started");
+            }
+        });
     }
 
-    private RegisterResponse registerNode() {
+    private F.Promise<RegisterResponse> registerNode() {
         String pubKey = keyManager.getPublicKey();
         RegisterRequest registerRequest = buildRegisterRequest(pubKey);
 
         JsonNode json = Json.toJson(registerRequest);
-        F.Promise<String> promise = WS.url(UrlUtil.createHttpUrl(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "register"))
+        F.Promise<WSResponse> promise = WS.url(UrlUtil.createHttpUrl(ADDRESS_DIRECTORY_NODE, PORT_DIRECTORY_NODE, "register"))
                 .setContentType("application/json")
-                .post(json)
-                .map(new F.Function<WSResponse, String>() {
+                .post(json);
+
+        return promise.map(new F.Function<WSResponse, RegisterResponse>() {
                     @Override
-                    public String apply(WSResponse wsResponse) throws Throwable {
-                        return wsResponse.getBody();
+                    public RegisterResponse apply(WSResponse wsResponse) throws Throwable {
+                        String result = wsResponse.getBody();
+                        RegisterResponse registerResponse = Json.fromJson(Json.parse(result), RegisterResponse.class);
+                        Logger.debug("Registration result: " + registerResponse);
+                        return registerResponse;
                     }
                 });
-
-        String result = promise.get(REQUEST_WAITING_TIME);
-        RegisterResponse registerResponse = Json.fromJson(Json.parse(result), RegisterResponse.class);
-        Logger.debug("Registration result: " + registerResponse);
-
-        return registerResponse;
     }
 
     private void startHeartbeat(final HeartbeatRequest heartbeatRequest) {
@@ -88,16 +91,16 @@ public class Global extends GlobalSettings {
                             .map(new F.Function<WSResponse, String>() {
                                 @Override
                                 public String apply(WSResponse wsResponse) throws Throwable {
-                                    return wsResponse.getBody();
+                                    String response =  wsResponse.getBody();
+
+                                    // TODO ghetto - proper error handling needed - reregister?
+                                    if ("{\"error\":\"invalid request\"}".equals(response)) {
+                                        Logger.debug("Got a response that the heartbeat is invalid");
+                                    }
+
+                                    return response;
                                 }
                             });
-
-                    String response = promise.get(REQUEST_WAITING_TIME);
-
-                    // TODO ghetto - proper error handling needed - reregister?
-                    if ("{\"error\":\"invalid request\"}".equals(response)) {
-                        Logger.debug("Got a response that the heartbeat is invalid");
-                    }
 
                 } catch (Exception e) {
                     Logger.debug("Something failed with the heartbeat, retrying...");
