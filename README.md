@@ -10,9 +10,29 @@ _Advanced Internet Computing - Group 4_
 
 ## Getting started
 
-TODO put some small guide here
+First of all you need to install ``activator`` and its dependencies. Check the website of the Play Framework for details (https://www.playframework.com/download). After that you can either run or build the appliations.
+
+To **run** them, change into the corresponding directory and execute ``activator run``. This will start the applicalication on the default port 9000. This might be good for taking a look at a single application, but is suboptimal for examining the whole system.
+
+To **build** them, change into the directory and execute ``activator dist`` to generate a binary. Alternatively you may use the ``build.sh`` script. This script will generate binaries for all services and store them in a ``build/`` folder. After building you need to extract the ZIP files and start the applications like this:
+```
+# name is one of the following: node, originator, quote, directory
+bin/$name -Dconfig.file=conf/application.conf
+```
+
+If you want to keep them running after the shell is close, do something like:
+```
+nohup bin/originator -Dconfig.file=conf/application &
+``` 
+
+Note: The directory service requires some additional work before it can be started:
+``
+mkdir provision-logs
+``
 
 ## Deployment
+
+For the deployment you will need to install Ansible (http://www.ansible.com/home).
 
 ### Creating new chain nodes
 The ``provision.yml`` playbook can be used to instantiate new chain nodes as well as ensure that existing chain nodes are running.
