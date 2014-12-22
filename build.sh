@@ -14,3 +14,6 @@ do
         cd ..
         echo "...done"
 done
+
+echo "Copying node binary to provisioning folder"
+cp build/node* provision/node-binary.zip

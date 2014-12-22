@@ -28,7 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Time: 21:44
  */
 public class Provisioner extends GlobalSettings {
-    private static final String PROVISION_COMMAND = "provision_nodes";
+    private static final String[] PROVISION_COMMAND = new String[]{
+            "/bin/bash",
+            "/usr/bin/provision_nodes"
+    };
+
     private static final String LOG_FOLDER = "provision-logs";
 
     // check the flag every 5000ms
