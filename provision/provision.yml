@@ -1,0 +1,119 @@
+# provision.yml
+---
+- name: Making sure that N chain nodes are running
+  hosts: local
+  connection: local
+  user: root
+  gather_facts: False
+
+  tasks:
+    - name: Provision new chain nodes
+      ec2:
+        key_name: g4-t3-rieder
+        instance_type: t2.micro
+        group_id: sg-eb8c1d8e
+        image: ami-f0b11187
+        wait: True
+        exact_count: 6
+        count_tag:
+          Name: G4-T3-Node
+        ec2_url: https://ec2.eu-west-1.amazonaws.com
+        vpc_subnet_id: subnet-dd982db8
+        instance_tags:
+          Name: G4-T3-Node
+      register: ec2
+
+    - name: Wait for SSH to be up on all nodes
+      wait_for: host={{ item.public_dns_name }} port=22 delay=60 timeout=320 state=started
+      with_items: ec2.instances
+
+    - name: Add all instance IPs to a host group
+      add_host: hostname={{ item.public_ip }} groupname=chainnodes
+      with_items: ec2.instances
+
+    - name: Add existing instances to the host group
+      add_host: hostname={{ item.public_ip }} groupname=chainnodes
+      with_items: ec2.tagged_instances
+
+    - name: Save the public IP of the directory
+      shell: curl icanhazip.com
+      register: directory_ip
+
+    - name: Print the IP of the directory
+      debug: msg="{{ directory_ip.stdout_lines[0] }} is the IP of the directory"
+
+- hosts: chainnodes
+  name: Configure chain nodes
+  user: ubuntu
+  sudo: yes
+  gather_facts: true
+
+  tasks:
+    - name: Check if the node is running
+      shell: ps aux | grep java | grep node | grep application.conf | grep -v grep | wc -l
+      register: nodes_running
+
+    - name: Update apt cache
+      apt: update_cache=yes cache_valid_time=86400
+ 
+    - name: Install dependencies
+      apt: name={{ item }} state=present
+      with_items:
+        - vim
+        - git
+        - tmux
+        - nginx
+        - openjdk-7-jdk
+        - unzip
+        - ntp
+
+    - name: Configure nginx reverse proxy
+      template: src=nginx.j2 dest=/etc/nginx/sites-enabled/default
+    - name: Debug the number of running nodes
+      debug: msg="{{ nodes_running.stdout_lines[0]|int }} java services are running"
+
+    - name: Restart nginx
+      service: name=nginx state=restarted
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Kill any existing Java stuff
+      command: killall -q java
+      failed_when: false
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Remove existing files
+      shell: rm -rf /root/node*
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Copy node binary to machines
+      copy: src=node-binary.zip dest=/root/node-binary.zip owner=root group=root
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Unzip the node
+      command: unzip -o /root/node-binary.zip -d /root
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Remove temp ZIP file
+      command: rm -rf /root/node-binary.zip
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Move the node directory
+      shell: mv /root/node* /root/node
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Get the public IP of the node
+      shell: curl icanhazip.com
+      register: node_ip
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Print the node ip
+      debug: msg="{{ node_ip.stdout_lines[0] }} is the IP of the node"
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Copy the chainnode configuration
+      template: src=chainnode.j2 dest=/root/node/conf/application.conf
+      when: nodes_running.stdout_lines[0]|int != 1
+
+    - name: Start the node 
+      shell: nohup /root/node/bin/node -Dconfig.file=/root/node/conf/application.conf &
+      when: nodes_running.stdout_lines[0]|int != 1
