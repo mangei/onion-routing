@@ -23,9 +23,9 @@ It ensures the following:
    * this means that it also _stops_ instances
  * nginx is configured
  * the chain node process is running
- * the processs uses the right config file
+ * the process uses the right config file
 
-**This playbook assumes that there is a ``node-binary.zip`` file in the same directory. This file should be created by using ``activator dist`` for the chain-node. **
+**This playbook assumes that there is a ``node-binary.zip`` file in the same directory. This file should be created by using ``activator dist`` for the chain-node.**
 
 It also assumes that the following environment variables are set:
  
