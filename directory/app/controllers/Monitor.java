@@ -14,7 +14,7 @@ import static play.mvc.Results.ok;
 public class Monitor {
 
     public static Result index() {
-        return ok(monitor.render(NodeStorage.getNodes(), NodeStorage.getHeartbeats()));
+        return ok(monitor.render(NodeStorage.getActiveNodes(), NodeStorage.getHeartbeats()));
     }
 
     public static Result listNodes() {

@@ -1,9 +1,11 @@
 package util;
 
+import controllers.Chain;
 import model.ChainNode;
 import play.Logger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NodeStorage {
 
@@ -12,8 +14,8 @@ public class NodeStorage {
     private static Map<ChainNode, Long> heartbeatMap;
 
     static {
-        nodeSet = new HashSet<ChainNode>();
-        heartbeatMap = new HashMap<ChainNode, Long>();
+        nodeSet = Collections.newSetFromMap(new ConcurrentHashMap<ChainNode, Boolean>());
+        heartbeatMap = new ConcurrentHashMap<ChainNode, Long>();
     }
 
     public static void addNode(ChainNode node) {
@@ -89,5 +91,18 @@ public class NodeStorage {
             throw new UnknownNodeException();
         }
 
+    }
+
+    public static List<ChainNode> getActiveNodes() {
+        Set<ChainNode> nodes = getNodes();
+        ArrayList<ChainNode> activeNodes = new ArrayList<ChainNode>();
+
+        for (ChainNode node : nodes) {
+            if (Chain.isNodeAlive(node)) {
+                activeNodes.add(node);
+            }
+        }
+
+        return activeNodes;
     }
 }

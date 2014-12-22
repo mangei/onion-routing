@@ -76,7 +76,7 @@ public class Chain {
         return badRequest(Json.toJson(new ErrorResponse("not enough nodes")));
     }
 
-    private static boolean isNodeAlive(ChainNode node) {
+    public static boolean isNodeAlive(ChainNode node) {
         if (NodeStorage.getLastHeartbeatForNode(node) != null) {
             long diff = Calendar.getInstance().getTimeInMillis() - NodeStorage.getLastHeartbeatForNode(node);
             return diff / 1000 < timeout;
