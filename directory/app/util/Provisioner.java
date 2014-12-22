@@ -3,21 +3,14 @@ package util;
 import play.Application;
 import play.GlobalSettings;
 import play.Logger;
-import play.libs.F;
-import play.libs.Json;
-import play.libs.ws.WS;
-import play.libs.ws.WSResponse;
-import scala.reflect.io.Path;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,8 +28,8 @@ public class Provisioner extends GlobalSettings {
 
     private static final String LOG_FOLDER = "provision-logs";
 
-    // check the flag every 5000ms
-    private static final Integer INTERVAL = 100;
+    // check every 10000ms
+    private static final Integer INTERVAL = 10000;
 
     // after this many intervals we will definetly run ansible
     private static final Integer INTERVAL_LIMIT = 60;
@@ -62,6 +55,8 @@ public class Provisioner extends GlobalSettings {
                 retList.add(file.getName());
             }
         }
+
+        Collections.sort(retList);
 
         return retList;
     }
@@ -99,11 +94,11 @@ public class Provisioner extends GlobalSettings {
                 if (!isRunning.getAndSet(true)) {
 
                     if (NodeStorage.getActiveNodes().size() < ACTIVE_NODE_COUNT) {
-                        Logger.info("Not enough active nodes, need to reprovision");
+                        Logger.info("=> Running ansible");
                         executeAnsible();
 
                     } else if (INTERVAL_LIMIT == intervalCount.get()) {
-                        Logger.info("Interval limit reached => running ansible");
+                        Logger.info("=> Running ansible (interval reached)");
                         executeAnsible();
                     }
 
