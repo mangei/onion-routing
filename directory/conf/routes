@@ -18,3 +18,6 @@ GET         /nodes               controllers.Monitor.listNodes()
 PUT         /heartbeat           controllers.Register.heartbeat()
 
 GET         /chain               controllers.Chain.getChain()
+
+GET         /provision           controllers.Provision.index()
+GET         /provision/:id       controllers.Provision.show(id: Integer)

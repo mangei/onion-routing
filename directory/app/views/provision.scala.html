@@ -1,0 +1,14 @@
+@(files: List[String])
+
+@main("Provisioning Logs") {
+    <div class="page-header">
+        <h1>Provisioning - Shows logs of previous provisioning tasks</h1>
+    </div>
+    <div class="container">
+        <ul>
+            @for((file,index) <- files.zipWithIndex) {
+                <li><a href="/provision/@index">@file</a></li>
+            }
+        </ul>
+    </div>
+}
