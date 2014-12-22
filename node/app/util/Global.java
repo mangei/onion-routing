@@ -12,6 +12,7 @@ import play.libs.ws.WSResponse;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Global extends GlobalSettings {
 
@@ -22,6 +23,8 @@ public class Global extends GlobalSettings {
 
     private static KeyManager keyManager;
     private static Config config;
+
+    private static AtomicBoolean isRegistered = new AtomicBoolean(false);
 
     @Override
     public void onStart(Application app) {
@@ -40,6 +43,10 @@ public class Global extends GlobalSettings {
 
         Logger.info("Register node...");
         // register node
+        doRegister();
+    }
+
+    private void doRegister() {
         F.Promise<RegisterResponse> registerResponse = registerNode();
         registerResponse.onRedeem(new F.Callback<RegisterResponse>() {
             @Override
@@ -48,6 +55,8 @@ public class Global extends GlobalSettings {
 
                 Logger.info("Node registered!");
                 Logger.info("Received secret: " + secret);
+
+                isRegistered.set(true);
 
                 // start heartbeat
                 HeartbeatRequest heartbeatRequest = new HeartbeatRequest();
@@ -80,7 +89,7 @@ public class Global extends GlobalSettings {
     }
 
     private void startHeartbeat(final HeartbeatRequest heartbeatRequest) {
-        Timer timer = new Timer();
+        final Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -93,9 +102,17 @@ public class Global extends GlobalSettings {
                                 public String apply(WSResponse wsResponse) throws Throwable {
                                     String response =  wsResponse.getBody();
 
-                                    // TODO ghetto - proper error handling needed - reregister?
                                     if ("{\"error\":\"invalid request\"}".equals(response)) {
                                         Logger.debug("Got a response that the heartbeat is invalid");
+
+                                        // start registration callback-chain
+                                        if (isRegistered.getAndSet(false)) {
+                                            doRegister();
+                                        }
+
+                                        // cancel the timer
+                                        timer.cancel();
+                                        timer.purge();
                                     }
 
                                     return response;

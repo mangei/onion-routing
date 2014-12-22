@@ -72,8 +72,6 @@ public class Register {
             }
         } catch (UnknownNodeException e) {
             Logger.error("Unknown node for heartbeat");
-            Logger.error(e.getMessage());
-            e.printStackTrace();
             return badRequest(Json.toJson(new ErrorResponse("invalid request")));
         }
         return internalServerError();
