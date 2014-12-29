@@ -1,6 +1,5 @@
 package controllers;
 
-import comparator.ChainNodeUsedComparator;
 import model.ChainNode;
 import model.ChainNodesResponse;
 import model.ErrorResponse;
@@ -11,7 +10,7 @@ import util.NodeStorage;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
+import java.util.List;
 
 import static play.mvc.Results.badRequest;
 import static play.mvc.Results.ok;
@@ -54,21 +53,21 @@ public class Chain {
     public static synchronized Result getChain() {
         ChainNodesResponse chainNodesResponse = new ChainNodesResponse();
 
-        ArrayList<ChainNode> nodeList = new ArrayList<>();
-        nodeList.addAll(NodeStorage.getNodes());
-        Collections.sort(nodeList, new ChainNodeUsedComparator());
+        List<ChainNode> originalChainNodeList = NodeStorage.getChainNodeList();
+        List<ChainNode> nodeList = new ArrayList<>();
+        nodeList.addAll(originalChainNodeList);
 
         int nodeCount = 0;
         while (nodeList.size() > 0 && chainLength > nodeCount) {
-            ChainNode node = nodeList.get(0);
+            ChainNode node = nodeList.remove(0);
             if (node != null) {
                 if (isNodeAlive(node)) {
                     chainNodesResponse.getChainNodes().add(node);
-                    node.setLasttimeused(Calendar.getInstance().getTimeInMillis());
+                    originalChainNodeList.remove(node);
+                    originalChainNodeList.add(node);
                     nodeCount++;
                 }
             }
-            nodeList.remove(0);
         }
         if (chainLength == nodeCount)
             return ok(Json.toJson(chainNodesResponse));

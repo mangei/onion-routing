@@ -13,14 +13,18 @@ public class NodeStorage {
 
     private static Map<ChainNode, Long> heartbeatMap;
 
+    private static List<ChainNode> chainNodesList;
+
     static {
         nodeSet = Collections.newSetFromMap(new ConcurrentHashMap<ChainNode, Boolean>());
         heartbeatMap = new ConcurrentHashMap<ChainNode, Long>();
+        chainNodesList = Collections.synchronizedList(new ArrayList<ChainNode>());
     }
 
     public static void addNode(ChainNode node) {
         nodeSet.add(node);
         heartbeatMap.put(node, System.currentTimeMillis());
+        chainNodesList.add(0,node);
     }
 
     public static void updateHeartbeatForNode(ChainNode node) {
@@ -73,6 +77,10 @@ public class NodeStorage {
 
     public static Map<ChainNode, Long> getHeartbeats() {
         return heartbeatMap;
+    }
+
+    public static List<ChainNode> getChainNodeList() {
+        return chainNodesList;
     }
 
     public static void updateHeartbeatForNode(String secret) throws UnknownNodeException {

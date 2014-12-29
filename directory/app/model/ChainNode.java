@@ -24,22 +24,10 @@ public class ChainNode {
     private Long lastHeatbeat;
 
     @JsonIgnore
-    private Long lasttimeused=0L;
-
-    @JsonIgnore
     private String secret;
 
     public ChainNode() {
     }
-
-    public Long getLasttimeused() {
-        return lasttimeused;
-    }
-
-    public void setLasttimeused(Long lasttimeused) {
-        this.lasttimeused = lasttimeused;
-    }
-
     public String getIp() {
         return ip;
     }
@@ -126,7 +114,6 @@ public class ChainNode {
                 ", publicKey='" + publicKey + '\'' +
                 ", registerDate=" + registerDate +
                 ", lastHeatbeat=" + lastHeatbeat +
-                ", lasttimeused=" + lasttimeused +
                 ", secret='" + secret + '\'' +
                 '}';
     }
