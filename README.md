@@ -9,6 +9,7 @@ _Advanced Internet Computing - Group 4_
  * [Thomas Rieder](http://rieder.io)
 
 ## Getting started
+_The below instructions were tested on Ubuntu LTS_
 
 First of all you need to install ``activator`` and its dependencies. Check the website of the Play Framework for details (https://www.playframework.com/download). After that you can either run or build the appliations.
 
@@ -19,7 +20,9 @@ To **build** them, change into the directory and execute ``activator dist`` to g
 # name is one of the following: node, originator, quote, directory
 bin/$name -Dconfig.file=conf/application.conf
 ```
-To set the HTTP Port the application binds to, edit the ``application.conf`` file. You should have already installed the Java 7 SDK when installing ``activator``. In case you don't have it installed or you want to run the application on another machine follow the instructions availabe [here](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html). 
+To set the HTTP Port the application binds to, edit the ``application.conf`` file. In case the services are running on different machines you will also need to set the IP address and the port at the bottom of the configuration file. Services other than the directory node also require the IP/Port of the other services to be set in the same file.
+
+You should have already installed the Java 7 SDK when installing ``activator``. In case you don't have it installed or you want to run the application on another machine follow the instructions available [here](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html). 
 
 If you want to keep them running after the shell is closed, do something like:
 ```
