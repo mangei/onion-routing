@@ -19,20 +19,52 @@ To **build** them, change into the directory and execute ``activator dist`` to g
 # name is one of the following: node, originator, quote, directory
 bin/$name -Dconfig.file=conf/application.conf
 ```
+To set the HTTP Port the application binds to, edit the ``application.conf`` file. You should have already installed the Java 7 SDK when installing ``activator``. In case you don't have it installed or you want to run the application on another machine follow the instructions availabe [here](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html). 
 
-If you want to keep them running after the shell is close, do something like:
+If you want to keep them running after the shell is closed, do something like:
 ```
 nohup bin/originator -Dconfig.file=conf/application &
 ``` 
 
-Note: The directory service requires some additional work before it can be started:
-``
+Note: The directory service requires some additional work before it can be started. You need to create a folder for the provisioning logs (in the root of the directory folder) and create a ``provision_nodes`` script. This script can be placed anywhere in the ``PATH``. If you don't want any provisioning just create and empty script.
+```
 mkdir provision-logs
-``
+```
+```
+vim /usr/bin/provision_nodes
+
+#!/usr/bin/env bash
+ansible-playbook /root/onion-routing/provision/provision.yml
+
+chmod +x /usr/bin/provision_nodes
+```
 
 ## Deployment
 
-For the deployment you will need to install Ansible (http://www.ansible.com/home).
+For the deployment you will need to install Ansible (http://www.ansible.com/home). For Ubuntu the whole configuration looks like this:
+```
+apt-get install ansible python-boto
+```
+
+Since we will run a provision playbook we will need to specify an inventory file with localhost
+```
+vim /etc/ansible/hosts
+[local]
+127.0.0.1
+```
+
+We then add the private key to login to the machines to the server:
+```
+vim /etc/ansible/ansible.cfg
+private_key_file = /etc/ansible/private.key
+host_key_checking = False
+
+vim /etc/ansible/private.key
+# paste key
+
+# protect teh key
+chmod 400 /etc/ansible/private.key
+```
 
 ### Creating new chain nodes
 The ``provision.yml`` playbook can be used to instantiate new chain nodes as well as ensure that existing chain nodes are running.
@@ -45,7 +77,7 @@ It ensures the following:
  * the chain node process is running
  * the process uses the right config file
 
-**This playbook assumes that there is a ``node-binary.zip`` file in the same directory. This file should be created by using ``activator dist`` for the chain-node.**
+**This playbook assumes that there is a ``node-binary.zip`` file in the "directory"-folder. This file should be created by using ``activator dist`` for the chain-node (see above).**
 
 It also assumes that the following environment variables are set:
  
