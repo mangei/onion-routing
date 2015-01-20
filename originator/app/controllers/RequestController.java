@@ -26,9 +26,21 @@ import java.util.Set;
 
 public class RequestController extends Controller {
 
-    private static long REQUEST_WAITING_TIME = 10000;
+    private static int REQUEST_WAITING_TIME = 10000;
+    private static int MAX_TRIES = 10;
 
     public static F.Promise<Result> requestMessage() {
+        return requestMessage(1L);
+    }
+
+    private static F.Promise<Result> requestMessage(final Long try_number) {
+        final boolean[] resent=new boolean[1];
+        resent[0]=false;
+        if (try_number > MAX_TRIES) {
+            Logger.info("max resend tries exceeded");
+            Result res = badRequest();
+            return F.Promise.pure(res);
+        }
 
         // get chain node from directory
         F.Promise<List<ChainNode>> nodesPromise = getChainNodes();
@@ -40,6 +52,7 @@ public class RequestController extends Controller {
                 final List<ChainNode> nodes = chainNodes;
 
                 if (nodes == null || nodes.size() != 3) {
+                    Logger.info("requesting node chain failed");
                     Result res = internalServerError("creating node chain failed");
                     return F.Promise.pure(res);
                 }
@@ -118,6 +131,7 @@ public class RequestController extends Controller {
 
                 // all message are encrypted - payload has to be sent to first node
                 if (payload == null || payload.isEmpty()) {
+                    Logger.info("payload is empty");
                     Result res = badRequest();
                     return F.Promise.pure(res);
 
@@ -131,6 +145,7 @@ public class RequestController extends Controller {
                     // post request to entry node
                     F.Promise<WSResponse> promise = WS.url(getUri(entryNode.getIp(), entryNode.getPort()))
                             .setContentType("application/json")
+                            .setTimeout(REQUEST_WAITING_TIME)
                             .post(Json.toJson(encryptedNodeRequest));
 
                     // map service response and produce response async
@@ -160,13 +175,33 @@ public class RequestController extends Controller {
                                 return ok(Json.toJson(requestResponse));
 
                             } catch (GeneralSecurityException | IOException e) {
+                                //resend message
                                 e.printStackTrace();
                                 Logger.error("decryption failed");
                                 Logger.error(e.getMessage());
-                                return badRequest();
+                                if (try_number > MAX_TRIES) {
+                                    Logger.error("max resend tries exceeded");
+                                    Result res = badRequest();
+                                    return res;
+                                }
+                                Logger.info("resending message");
+                                return requestMessage(try_number + 1).get(REQUEST_WAITING_TIME * MAX_TRIES * 2);
                             }
 
 
+                        }
+                    }).recoverWith(new F.Function<Throwable, F.Promise<Result>>() {
+                        @Override
+                        public F.Promise<Result> apply(Throwable throwable) throws Throwable {
+                            //resend message if a error occurs
+                            Logger.info("request failed");
+                            if (try_number > MAX_TRIES) {
+                                Logger.error("max resend tries exceeded");
+                                Result res = badRequest();
+                                return F.Promise.pure(res);
+                            }
+                            Logger.info("resending message");
+                            return requestMessage(try_number + 1);
                         }
                     });
 
@@ -220,7 +255,7 @@ public class RequestController extends Controller {
                 .setContentType("application/json")
                 .get();
 
-        return promise.map(new F.Function<WSResponse, List<ChainNode> >() {
+        return promise.map(new F.Function<WSResponse, List<ChainNode>>() {
             @Override
             public List<ChainNode> apply(WSResponse wsResponse) throws Throwable {
                 String response = wsResponse.getBody();
