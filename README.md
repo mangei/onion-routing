@@ -82,7 +82,7 @@ It ensures the following:
  * the chain node process is running
  * the process uses the right config file
 
-**This playbook assumes that there is a ``node-binary.zip`` file in the "directory"-folder. This file should be created by using ``activator dist`` for the chain-node (see above).**
+**This playbook assumes that there is a ``node-binary.zip`` file in the same folder as the ansible playbook. This file should be created by using ``activator dist`` for the chain-node (see above).**
 
 It also assumes that the following environment variables are set:
  
