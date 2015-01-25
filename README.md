@@ -94,8 +94,8 @@ It also assumes that the following environment variables are set:
 
 First off, as specified in the forum you will get a VM from us that only hosts the originator. To get everything running you have to do the following:
  * start the VM
- * logon with credentials: **TODO MIHAI**
- * go the the folder of the orignator: ``cd SOMETHING`` **TODO MIHAI**
+ * logon with credentials: ``aic/aic``
+ * go the the folder of the orignator: ``cd ~/Desktop/app/originator``
  * in the ``conf`` folder there is a file called ``application.conf``. In this file you will need to configure the following:
    * ``directory.http.address`` to the **public IP** of the directory node on EC2
    * ``directory.http.port`` to port 80
