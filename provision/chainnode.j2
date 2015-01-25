@@ -72,7 +72,7 @@ logger.application=DEBUG
 
 # local address and port
 http.address={{ node_ip.stdout_lines[0] }}
-http.port=9000
+http.port=80
 
 # ip and address for the directory node
 directory.http.address={{ hostvars["127.0.0.1"].directory_ip.stdout_lines[0] }}
