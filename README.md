@@ -108,7 +108,7 @@ First off, as specified in the forum you will get a VM from us that only hosts t
  * you can then start the originator with the following command: ``bin/originator -Dconfig.file=conf/application.conf``
  * you can access the web interface of the originator at the IP address of the VM on the port configured in ``conf/application.conf`` (the default is ``9000``)
 
-**Note**: There is a bug at the ``/monitor`` resource of the directory node. On one of our team member's PCs the table needs to refreshed to properly show all nodes - we think that the JavaScript library used to render the table is at fault, but were not able to reproduce it on another machine.
+**Note**: There is a bug at the ``/monitor`` resource of the directory node. On one of our team member's PCs the page needs to refreshed to properly show all nodes - we think that the JavaScript library used to render the table is at fault, but were not able to reproduce it on another machine.
 
 ### The EC2 Instances
 
