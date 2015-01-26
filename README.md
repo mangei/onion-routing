@@ -114,16 +114,17 @@ First off, as specified in the forum you will get a VM from us that only hosts t
 
 Our EC2 instances are running with the following IDs:
  * Chain nodes: ``G4-T3-Node`` in **Ireland**
- * Directory: ``G4-T3-directory`` in **Frankfurt**
- * Quote: ``G4-T3-quote`` in **Frankfurt**
- * (Originator: ``G4-T3-originator`` in **Frankfurt**)
+ * Directory: ``G4-T3-directory`` in **Sao Paulo**
+ * Quote: ``G4-T3-quote`` in **Sao Paulo**
+ * (Originator: ``G4-T3-originator`` in **Sau Paulo**)
 
-To connect to the instances please use the private key provided by us (``aic-ec2.ppk``) and the username ``ubuntu``.
+To connect to the instances please use the private key provided by us (``aic-ec2.ppk``) and the username ``ubuntu``. We run the instances in Sao Paulo because we have to [according to this TUWEL thread](https://tuwel.tuwien.ac.at/mod/forum/discuss.php?d=56033).
 
 To start the originator:
 ```
 sudo -i
 cd /root/originator
+# set quote.http.address to the public IP of the quote service
 bin/originator -Dconfig.file=conf/application.conf
 ```
 The originator is now available at port ``80`` (there is an nginx reverse proxy running from ``80`` <-> ``9000``).
